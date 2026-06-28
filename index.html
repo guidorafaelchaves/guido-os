@@ -218,6 +218,74 @@
     .weather-day .temp { font-size: 20px; font-weight: 800; }
     .weather-day small { color: var(--muted); display:block; margin-top: 4px; line-height: 1.35; }
 
+    .editor-toolbar {
+      position: fixed;
+      right: 20px;
+      bottom: 20px;
+      z-index: 50;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      max-width: min(560px, calc(100vw - 40px));
+      padding: 10px;
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      background: rgba(7, 11, 17, .9);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(18px);
+    }
+    .editor-toolbar button {
+      min-height: 38px;
+      font-size: 13px;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+    body.edit-mode [data-editable="1"] {
+      outline: 1px dashed rgba(102,217,239,.6);
+      outline-offset: 3px;
+      border-radius: 8px;
+      cursor: text;
+    }
+    body.edit-mode .card,
+    body.edit-mode .hero,
+    body.edit-mode .status {
+      position: relative;
+      border-color: rgba(102,217,239,.38);
+    }
+    .box-editor {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      z-index: 8;
+      display: none;
+      gap: 6px;
+      padding: 6px;
+      border-radius: 12px;
+      background: rgba(0,0,0,.48);
+      border: 1px solid var(--border);
+      backdrop-filter: blur(12px);
+    }
+    body.edit-mode .card:hover > .box-editor,
+    body.edit-mode .hero:hover > .box-editor,
+    body.edit-mode .status:hover > .box-editor {
+      display: flex;
+    }
+    .box-editor button {
+      min-height: 30px;
+      padding: 0 8px;
+      border-radius: 9px;
+      font-size: 12px;
+      background: rgba(255,255,255,.1);
+    }
+    .edit-empty {
+      min-height: 120px;
+      border: 1px dashed rgba(255,255,255,.16);
+      border-radius: 16px;
+      display: grid;
+      place-items: center;
+      color: var(--muted);
+    }
+
     .block-actions { display:flex; gap:8px; align-items:center; }
     .add-fav {
       font-size: 12px;
@@ -545,6 +613,230 @@ Visão e Criação: ideia de exploração visual, pauta ou leitura conectada a e
       openSearch('google');
     }
 
+    const layoutKey = 'guido-command-layout-v1';
+    let editMode = false;
+
+    function restoreCustomLayout() {
+      const saved = loadJson(layoutKey, null);
+      if (!saved || !saved.header || !saved.main) return;
+      document.querySelector('header').innerHTML = saved.header;
+      document.querySelector('main.grid').innerHTML = saved.main;
+      if (saved.footer) document.querySelector('footer').innerHTML = saved.footer;
+    }
+
+    function createEditorToolbar() {
+      const toolbar = document.createElement('div');
+      toolbar.className = 'editor-toolbar';
+      toolbar.innerHTML = `
+        <button type="button" class="primary" onclick="toggleEditMode()">Personalizar</button>
+        <button type="button" onclick="addTextBox()">+ box texto</button>
+        <button type="button" onclick="addLinksBox()">+ box links</button>
+        <button type="button" onclick="saveLayout()">Salvar layout</button>
+        <button type="button" class="ghost-button" onclick="resetLayout()">Restaurar</button>
+      `;
+      document.body.appendChild(toolbar);
+    }
+
+    function toggleEditMode(force) {
+      editMode = typeof force === 'boolean' ? force : !editMode;
+      document.body.classList.toggle('edit-mode', editMode);
+      document.querySelectorAll('.editor-toolbar .primary').forEach(btn => {
+        btn.textContent = editMode ? 'Sair da edicao' : 'Personalizar';
+      });
+
+      if (editMode) {
+        enableInlineEditing();
+        addBoxControls();
+      } else {
+        disableInlineEditing();
+        removeBoxControls();
+      }
+    }
+
+    function enableInlineEditing() {
+      const selector = [
+        '.eyebrow', 'h1', '.subtitle', '.quote', 'footer',
+        '.card h2', '.card p', '.card strong', '.tiny',
+        '.pill', '.mission-item', '.link .label', '.link small'
+      ].join(',');
+
+      document.querySelectorAll(selector).forEach(el => {
+        if (el.closest('.editor-toolbar') || el.closest('.box-editor')) return;
+        el.contentEditable = 'true';
+        el.dataset.editable = '1';
+        el.spellcheck = true;
+      });
+
+      document.querySelectorAll('a.link').forEach(link => {
+        link.addEventListener('click', blockLinkWhileEditing);
+        link.addEventListener('dblclick', editLinkUrl);
+        link.title = 'Em edicao: duplo clique para alterar URL';
+      });
+    }
+
+    function disableInlineEditing() {
+      document.querySelectorAll('[data-editable="1"]').forEach(el => {
+        el.removeAttribute('contenteditable');
+        el.removeAttribute('data-editable');
+      });
+
+      document.querySelectorAll('a.link').forEach(link => {
+        link.removeEventListener('click', blockLinkWhileEditing);
+        link.removeEventListener('dblclick', editLinkUrl);
+        link.removeAttribute('title');
+      });
+    }
+
+    function blockLinkWhileEditing(event) {
+      if (!editMode) return;
+      event.preventDefault();
+      event.stopPropagation();
+    }
+
+    function editLinkUrl(event) {
+      if (!editMode) return;
+      event.preventDefault();
+      event.stopPropagation();
+      const next = normalizeUrl(prompt('Nova URL deste link:', event.currentTarget.href) || '');
+      if (next) event.currentTarget.href = next;
+    }
+
+    function addBoxControls() {
+      document.querySelectorAll('.hero, .status, main.grid > .card').forEach(box => {
+        if (box.querySelector(':scope > .box-editor')) return;
+        const controls = document.createElement('div');
+        controls.className = 'box-editor';
+        controls.innerHTML = `
+          <button type="button" data-action="wider">largura</button>
+          <button type="button" data-action="copy">duplicar</button>
+          <button type="button" data-action="delete">excluir</button>
+        `;
+        controls.addEventListener('click', event => {
+          const action = event.target.dataset.action;
+          if (!action) return;
+          event.preventDefault();
+          event.stopPropagation();
+          if (action === 'wider') cycleBoxWidth(box);
+          if (action === 'copy') duplicateBox(box);
+          if (action === 'delete') deleteBox(box);
+        });
+        box.prepend(controls);
+      });
+    }
+
+    function removeBoxControls() {
+      document.querySelectorAll('.box-editor').forEach(el => el.remove());
+    }
+
+    function cycleBoxWidth(box) {
+      if (!box.classList.contains('card')) return;
+      const spans = ['span-3', 'span-4', 'span-5', 'span-6', 'span-7', 'span-12'];
+      const current = spans.find(cls => box.classList.contains(cls)) || 'span-4';
+      const next = spans[(spans.indexOf(current) + 1) % spans.length];
+      spans.forEach(cls => box.classList.remove(cls));
+      box.classList.add(next);
+    }
+
+    function duplicateBox(box) {
+      const clone = box.cloneNode(true);
+      clone.querySelectorAll('.box-editor').forEach(el => el.remove());
+      box.after(clone);
+      if (editMode) {
+        enableInlineEditing();
+        addBoxControls();
+      }
+    }
+
+    function deleteBox(box) {
+      if (!confirm('Excluir este box?')) return;
+      box.remove();
+      ensureGridHasContent();
+    }
+
+    function addTextBox() {
+      const title = prompt('Titulo do novo box:', 'Novo box') || 'Novo box';
+      const section = document.createElement('section');
+      section.className = 'card span-4';
+      section.innerHTML = `
+        <h2>${escapeHtml(title)} <span class="tag">editavel</span></h2>
+        <div class="mission-item">
+          <strong>Titulo interno</strong>
+          <p>Edite este texto diretamente no modo Personalizar.</p>
+        </div>
+      `;
+      document.querySelector('main.grid').appendChild(section);
+      toggleEditMode(true);
+    }
+
+    function addLinksBox() {
+      const id = 'custom-' + Date.now().toString(36);
+      const title = prompt('Titulo do box de links:', 'Meus links') || 'Meus links';
+      const section = document.createElement('section');
+      section.className = 'card span-4';
+      section.dataset.section = id;
+      section.innerHTML = `
+        <h2>${escapeHtml(title)} <span class="block-actions"><span class="tag">links</span><button class="add-fav" type="button" onclick="toggleFavForm('${id}')">+ site</button></span></h2>
+        <form class="fav-form" data-form="${id}" onsubmit="addFavorite(event, '${id}')"><input name="title" placeholder="Nome do site"><input name="url" placeholder="https://..."><button type="submit">Adicionar</button></form>
+        <div class="links" data-links="${id}">
+          <a class="link" href="https://example.com" target="_blank"><span class="label">Exemplo</span><small>edite</small></a>
+        </div>
+      `;
+      document.querySelector('main.grid').appendChild(section);
+      if (!sectionNames.includes(id)) sectionNames.push(id);
+      toggleEditMode(true);
+    }
+
+    function ensureGridHasContent() {
+      const grid = document.querySelector('main.grid');
+      if (grid.children.length) return;
+      const empty = document.createElement('section');
+      empty.className = 'card span-12 edit-empty';
+      empty.textContent = 'Use + box texto ou + box links para recomecar.';
+      grid.appendChild(empty);
+    }
+
+    function saveLayout() {
+      const wasEditing = editMode;
+      toggleEditMode(false);
+      const cleanHeader = cleanHtml(document.querySelector('header'));
+      const cleanMain = cleanHtml(document.querySelector('main.grid'));
+      const cleanFooter = cleanHtml(document.querySelector('footer'));
+      saveJson(layoutKey, {
+        header: cleanHeader,
+        main: cleanMain,
+        footer: cleanFooter,
+        savedAt: new Date().toISOString()
+      });
+      if (wasEditing) toggleEditMode(true);
+      alert('Layout salvo neste navegador.');
+    }
+
+    function cleanHtml(element) {
+      const clone = element.cloneNode(true);
+      clone.querySelectorAll('.box-editor').forEach(el => el.remove());
+      clone.querySelectorAll('[contenteditable], [data-editable]').forEach(el => {
+        el.removeAttribute('contenteditable');
+        el.removeAttribute('data-editable');
+      });
+      return clone.innerHTML;
+    }
+
+    function resetLayout() {
+      if (!confirm('Restaurar o layout original? Links e notas salvos separadamente serao mantidos.')) return;
+      localStorage.removeItem(layoutKey);
+      location.reload();
+    }
+
+    function escapeHtml(value) {
+      return String(value).replace(/[&<>"']/g, char => ({
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#39;'
+      }[char]));
+    }
+
 
 
     const sectionNames = ['juridico','empresas','investimentos','ia','produtividade','energia','mobilidade','utilidades'];
@@ -555,6 +847,12 @@ Visão e Criação: ideia de exploração visual, pauta ou leitura conectada a e
       try { return JSON.parse(localStorage.getItem(key)) || fallback; } catch { return fallback; }
     }
     function saveJson(key, value) { localStorage.setItem(key, JSON.stringify(value)); }
+    function syncSectionNamesFromDom() {
+      document.querySelectorAll('[data-links]').forEach(el => {
+        const name = el.dataset.links;
+        if (name && !sectionNames.includes(name)) sectionNames.push(name);
+      });
+    }
     function normalizeUrl(url) {
       const trimmed = (url || '').trim();
       if (!trimmed) return '';
@@ -673,6 +971,9 @@ Visão e Criação: ideia de exploração visual, pauta ou leitura conectada a e
       }
     }
 
+    restoreCustomLayout();
+    syncSectionNamesFromDom();
+    createEditorToolbar();
     prepareDefaultLinks();
     renderCustomFavorites();
     loadWeather();
