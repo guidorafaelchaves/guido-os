@@ -281,6 +281,32 @@
       font-size: 12px;
       background: rgba(255,255,255,.1);
     }
+    .box-editor [data-action="drag"] {
+      cursor: grab;
+      color: var(--accent);
+    }
+    body.edit-mode .dragging-box {
+      opacity: .42;
+      outline: 2px solid rgba(102,217,239,.75);
+    }
+    body.edit-mode .drop-target {
+      outline: 2px dashed rgba(117,209,124,.85);
+      outline-offset: 8px;
+    }
+    .nested-boxes {
+      display: grid;
+      gap: 12px;
+      margin-top: 14px;
+      padding-top: 14px;
+      border-top: 1px dashed rgba(255,255,255,.14);
+    }
+    .nested-boxes:empty {
+      display: none;
+    }
+    .nested-boxes .card {
+      box-shadow: none;
+      background: rgba(255,255,255,.045);
+    }
     .edit-empty {
       min-height: 120px;
       border: 1px dashed rgba(255,255,255,.16);
@@ -619,6 +645,7 @@ Visão e Criação: ideia de exploração visual, pauta ou leitura conectada a e
 
     const layoutKey = 'guido-command-layout-v1';
     let editMode = false;
+    let draggedBox = null;
 
     function restoreCustomLayout() {
       const saved = loadJson(layoutKey, null);
@@ -651,8 +678,10 @@ Visão e Criação: ideia de exploração visual, pauta ou leitura conectada a e
       if (editMode) {
         enableInlineEditing();
         addBoxControls();
+        enableBoxDragging();
       } else {
         disableInlineEditing();
+        disableBoxDragging();
         removeBoxControls();
       }
     }
@@ -726,11 +755,12 @@ Visão e Criação: ideia de exploração visual, pauta ou leitura conectada a e
     }
 
     function addBoxControls() {
-      document.querySelectorAll('.hero, .status, main.grid > .card').forEach(box => {
+      document.querySelectorAll('.hero, .status, .card').forEach(box => {
         if (box.querySelector(':scope > .box-editor')) return;
         const controls = document.createElement('div');
         controls.className = 'box-editor';
         controls.innerHTML = `
+          <button type="button" data-action="drag" draggable="true" title="Arraste para mover ou inserir em outro box">arrastar</button>
           <button type="button" data-action="wider">largura</button>
           <button type="button" data-action="copy">duplicar</button>
           <button type="button" data-action="delete">excluir</button>
@@ -764,10 +794,13 @@ Visão e Criação: ideia de exploração visual, pauta ou leitura conectada a e
     function duplicateBox(box) {
       const clone = box.cloneNode(true);
       clone.querySelectorAll('.box-editor').forEach(el => el.remove());
+      clone.classList.remove('dragging-box', 'drop-target');
+      clone.removeAttribute('draggable');
       box.after(clone);
       if (editMode) {
         enableInlineEditing();
         addBoxControls();
+        enableBoxDragging();
       }
     }
 
@@ -810,6 +843,110 @@ Visão e Criação: ideia de exploração visual, pauta ou leitura conectada a e
       toggleEditMode(true);
     }
 
+    function enableBoxDragging() {
+      const grid = document.querySelector('main.grid');
+      grid.addEventListener('dragover', handleGridDragOver);
+      grid.addEventListener('drop', handleGridDrop);
+
+      document.querySelectorAll('.card, .hero, .status').forEach(box => {
+        const handle = box.querySelector(':scope > .box-editor [data-action="drag"]');
+        if (!handle || handle.dataset.dragReady === '1') return;
+        handle.dataset.dragReady = '1';
+        handle.addEventListener('dragstart', event => startBoxDrag(event, box));
+        handle.addEventListener('dragend', finishBoxDrag);
+      });
+
+      document.querySelectorAll('.card').forEach(box => {
+        if (box.dataset.dropReady === '1') return;
+        box.dataset.dropReady = '1';
+        box.addEventListener('dragover', handleBoxDragOver);
+        box.addEventListener('dragleave', handleBoxDragLeave);
+        box.addEventListener('drop', handleBoxDrop);
+      });
+    }
+
+    function disableBoxDragging() {
+      document.querySelectorAll('.dragging-box, .drop-target').forEach(box => {
+        box.classList.remove('dragging-box', 'drop-target');
+      });
+      draggedBox = null;
+    }
+
+    function startBoxDrag(event, box) {
+      if (!editMode) return;
+      draggedBox = box;
+      box.classList.add('dragging-box');
+      event.dataTransfer.effectAllowed = 'move';
+      event.dataTransfer.setData('text/plain', 'guido-command-box');
+    }
+
+    function finishBoxDrag() {
+      document.querySelectorAll('.dragging-box, .drop-target').forEach(box => {
+        box.classList.remove('dragging-box', 'drop-target');
+      });
+      draggedBox = null;
+    }
+
+    function handleGridDragOver(event) {
+      if (!draggedBox) return;
+      event.preventDefault();
+      event.dataTransfer.dropEffect = 'move';
+    }
+
+    function handleGridDrop(event) {
+      if (!draggedBox) return;
+      if (event.target.closest('.card') && event.target.closest('.card') !== draggedBox) return;
+      event.preventDefault();
+      document.querySelector('main.grid').appendChild(draggedBox);
+      refreshEditorAfterMove();
+    }
+
+    function handleBoxDragOver(event) {
+      if (!draggedBox) return;
+      const target = event.currentTarget;
+      if (target === draggedBox || draggedBox.contains(target)) return;
+      event.preventDefault();
+      event.stopPropagation();
+      target.classList.add('drop-target');
+      event.dataTransfer.dropEffect = 'move';
+    }
+
+    function handleBoxDragLeave(event) {
+      const target = event.currentTarget;
+      if (!target.contains(event.relatedTarget)) {
+        target.classList.remove('drop-target');
+      }
+    }
+
+    function handleBoxDrop(event) {
+      if (!draggedBox) return;
+      const target = event.currentTarget;
+      if (target === draggedBox || draggedBox.contains(target)) return;
+      event.preventDefault();
+      event.stopPropagation();
+      getNestedBoxContainer(target).appendChild(draggedBox);
+      refreshEditorAfterMove();
+    }
+
+    function getNestedBoxContainer(box) {
+      let container = box.querySelector(':scope > .nested-boxes');
+      if (!container) {
+        container = document.createElement('div');
+        container.className = 'nested-boxes';
+        box.appendChild(container);
+      }
+      return container;
+    }
+
+    function refreshEditorAfterMove() {
+      document.querySelectorAll('.dragging-box, .drop-target').forEach(box => {
+        box.classList.remove('dragging-box', 'drop-target');
+      });
+      draggedBox = null;
+      addBoxControls();
+      enableBoxDragging();
+    }
+
     function ensureGridHasContent() {
       const grid = document.querySelector('main.grid');
       if (grid.children.length) return;
@@ -838,6 +975,14 @@ Visão e Criação: ideia de exploração visual, pauta ou leitura conectada a e
     function cleanHtml(element) {
       const clone = element.cloneNode(true);
       clone.querySelectorAll('.box-editor').forEach(el => el.remove());
+      clone.querySelectorAll('.dragging-box, .drop-target').forEach(el => {
+        el.classList.remove('dragging-box', 'drop-target');
+      });
+      clone.querySelectorAll('[draggable], [data-drag-ready], [data-drop-ready]').forEach(el => {
+        el.removeAttribute('draggable');
+        el.removeAttribute('data-drag-ready');
+        el.removeAttribute('data-drop-ready');
+      });
       clone.querySelectorAll('[contenteditable], [data-editable]').forEach(el => {
         el.removeAttribute('contenteditable');
         el.removeAttribute('data-editable');
