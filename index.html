@@ -246,6 +246,10 @@
       border-radius: 8px;
       cursor: text;
     }
+    .editable-fragment {
+      display: inline;
+      min-width: 1ch;
+    }
     body.edit-mode .card,
     body.edit-mode .hero,
     body.edit-mode .status {
@@ -654,10 +658,12 @@ Visão e Criação: ideia de exploração visual, pauta ou leitura conectada a e
     }
 
     function enableInlineEditing() {
+      prepareEditableFragments();
       const selector = [
         '.eyebrow', 'h1', '.subtitle', '.quote', 'footer',
-        '.card h2', '.card p', '.card strong', '.tiny',
-        '.pill', '.mission-item', '.link .label', '.link small'
+        '.card h2', '.card h2 .tag', '.card p', '.card strong', '.tiny',
+        '.pill', '.mission-item', '.mission-item strong', '.mission-item p',
+        '.link .label', '.link small', '.editable-fragment'
       ].join(',');
 
       document.querySelectorAll(selector).forEach(el => {
@@ -671,6 +677,24 @@ Visão e Criação: ideia de exploração visual, pauta ou leitura conectada a e
         link.addEventListener('click', blockLinkWhileEditing);
         link.addEventListener('dblclick', editLinkUrl);
         link.title = 'Em edicao: duplo clique para alterar URL';
+      });
+    }
+
+    function prepareEditableFragments() {
+      const containers = [
+        ...document.querySelectorAll('.card h2, .hero, .status, .mission-item, footer')
+      ];
+
+      containers.forEach(container => {
+        [...container.childNodes].forEach(node => {
+          if (node.nodeType !== Node.TEXT_NODE) return;
+          if (!node.textContent || !node.textContent.trim()) return;
+
+          const span = document.createElement('span');
+          span.className = 'editable-fragment';
+          span.textContent = node.textContent.trim();
+          node.replaceWith(span);
+        });
       });
     }
 
