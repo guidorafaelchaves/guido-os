@@ -284,6 +284,8 @@
     .box-editor [data-action="drag"] {
       cursor: grab;
       color: var(--accent);
+      touch-action: none;
+      user-select: none;
     }
     body.edit-mode .dragging-box {
       opacity: .26;
@@ -324,6 +326,7 @@
     }
     body.edit-mode.drag-active {
       cursor: grabbing;
+      user-select: none;
     }
     .nested-boxes {
       display: grid;
@@ -882,6 +885,8 @@ Visão e Criação: ideia de exploração visual, pauta ou leitura conectada a e
         if (!handle || handle.dataset.dragReady === '1') return;
         handle.dataset.dragReady = '1';
         handle.addEventListener('pointerdown', event => startPointerDrag(event, box));
+        handle.addEventListener('mousedown', event => startMouseDrag(event, box));
+        handle.addEventListener('touchstart', event => startTouchDrag(event, box), { passive: false });
       });
     }
 
@@ -893,6 +898,10 @@ Visão e Criação: ideia de exploração visual, pauta ou leitura conectada a e
       document.body.classList.remove('drag-active');
       window.removeEventListener('pointermove', movePointerDrag);
       window.removeEventListener('pointerup', endPointerDrag);
+      window.removeEventListener('mousemove', moveMouseDrag);
+      window.removeEventListener('mouseup', endMouseDrag);
+      window.removeEventListener('touchmove', moveTouchDrag);
+      window.removeEventListener('touchend', endTouchDrag);
       pointerDrag = null;
       draggedBox = null;
     }
@@ -900,9 +909,29 @@ Visão e Criação: ideia de exploração visual, pauta ou leitura conectada a e
     function startPointerDrag(event, box) {
       if (!editMode) return;
       if (event.button !== undefined && event.button !== 0) return;
+      startDirectDrag(event, box, event.clientX, event.clientY);
+      window.addEventListener('pointermove', movePointerDrag);
+      window.addEventListener('pointerup', endPointerDrag, { once: true });
+    }
+
+    function startMouseDrag(event, box) {
+      if (pointerDrag || !editMode || event.button !== 0) return;
+      startDirectDrag(event, box, event.clientX, event.clientY);
+      window.addEventListener('mousemove', moveMouseDrag);
+      window.addEventListener('mouseup', endMouseDrag, { once: true });
+    }
+
+    function startTouchDrag(event, box) {
+      if (pointerDrag || !editMode || !event.touches.length) return;
+      const touch = event.touches[0];
+      startDirectDrag(event, box, touch.clientX, touch.clientY);
+      window.addEventListener('touchmove', moveTouchDrag, { passive: false });
+      window.addEventListener('touchend', endTouchDrag, { once: true });
+    }
+
+    function startDirectDrag(event, box, clientX, clientY) {
       event.preventDefault();
       event.stopPropagation();
-
       draggedBox = box;
       const rect = box.getBoundingClientRect();
       const ghost = box.cloneNode(true);
@@ -922,30 +951,46 @@ Visão e Criação: ideia de exploração visual, pauta ou leitura conectada a e
         box,
         ghost,
         hint,
-        offsetX: event.clientX - rect.left,
-        offsetY: event.clientY - rect.top,
+        offsetX: clientX - rect.left,
+        offsetY: clientY - rect.top,
         target: null
       };
 
       box.classList.add('dragging-box');
       document.body.classList.add('drag-active');
-      window.addEventListener('pointermove', movePointerDrag);
-      window.addEventListener('pointerup', endPointerDrag, { once: true });
-      movePointerDrag(event);
+      updateDirectDrag(clientX, clientY);
     }
 
     function movePointerDrag(event) {
       if (!pointerDrag) return;
       event.preventDefault();
+      updateDirectDrag(event.clientX, event.clientY);
+    }
 
-      const x = event.clientX - pointerDrag.offsetX;
-      const y = event.clientY - pointerDrag.offsetY;
-      pointerDrag.ghost.style.transform = `translate3d(${x - pointerDrag.ghost.offsetLeft}px, ${y - pointerDrag.ghost.offsetTop}px, 0) scale(.98)`;
+    function moveMouseDrag(event) {
+      if (!pointerDrag) return;
+      event.preventDefault();
+      updateDirectDrag(event.clientX, event.clientY);
+    }
+
+    function moveTouchDrag(event) {
+      if (!pointerDrag || !event.touches.length) return;
+      event.preventDefault();
+      const touch = event.touches[0];
+      updateDirectDrag(touch.clientX, touch.clientY);
+    }
+
+    function updateDirectDrag(clientX, clientY) {
+      const x = clientX - pointerDrag.offsetX;
+      const y = clientY - pointerDrag.offsetY;
+      pointerDrag.ghost.style.left = `${x}px`;
+      pointerDrag.ghost.style.top = `${y}px`;
+      pointerDrag.ghost.style.transform = 'scale(.98)';
       pointerDrag.hint.style.display = 'block';
-      pointerDrag.hint.style.left = `${event.clientX + 14}px`;
-      pointerDrag.hint.style.top = `${event.clientY + 14}px`;
+      pointerDrag.hint.style.left = `${clientX + 14}px`;
+      pointerDrag.hint.style.top = `${clientY + 14}px`;
 
-      const target = findDropTarget(event.clientX, event.clientY);
+      const target = findDropTarget(clientX, clientY);
       document.querySelectorAll('.drop-target').forEach(box => {
         if (box !== target) box.classList.remove('drop-target');
       });
@@ -962,7 +1007,22 @@ Visão e Criação: ideia de exploração visual, pauta ou leitura conectada a e
     function endPointerDrag(event) {
       if (!pointerDrag) return;
       event.preventDefault();
+      finishDirectDrag();
+    }
 
+    function endMouseDrag(event) {
+      if (!pointerDrag) return;
+      event.preventDefault();
+      finishDirectDrag();
+    }
+
+    function endTouchDrag(event) {
+      if (!pointerDrag) return;
+      event.preventDefault();
+      finishDirectDrag();
+    }
+
+    function finishDirectDrag() {
       const snapshots = snapshotMovableBoxes();
       const target = pointerDrag.target;
 
@@ -994,6 +1054,8 @@ Visão e Criação: ideia de exploração visual, pauta ou leitura conectada a e
         box.classList.remove('dragging-box', 'drop-target');
       });
       window.removeEventListener('pointermove', movePointerDrag);
+      window.removeEventListener('mousemove', moveMouseDrag);
+      window.removeEventListener('touchmove', moveTouchDrag);
       pointerDrag = null;
       draggedBox = null;
       addBoxControls();
