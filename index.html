@@ -286,12 +286,44 @@
       color: var(--accent);
     }
     body.edit-mode .dragging-box {
-      opacity: .42;
+      opacity: .26;
       outline: 2px solid rgba(102,217,239,.75);
     }
     body.edit-mode .drop-target {
-      outline: 2px dashed rgba(117,209,124,.85);
-      outline-offset: 8px;
+      outline: 2px solid rgba(117,209,124,.9);
+      outline-offset: 10px;
+      transform: scale(1.01);
+      transition: transform .18s ease, outline-color .18s ease, background .18s ease;
+      background: rgba(117,209,124,.075);
+    }
+    .drag-ghost {
+      position: fixed;
+      z-index: 1000;
+      pointer-events: none;
+      width: min(420px, 72vw);
+      max-height: 360px;
+      overflow: hidden;
+      opacity: .92;
+      transform: translate3d(0, 0, 0) scale(.98);
+      box-shadow: 0 32px 80px rgba(0,0,0,.48);
+      border: 1px solid rgba(102,217,239,.5);
+      transition: transform .08s linear;
+    }
+    .drop-hint {
+      display: none;
+      position: fixed;
+      z-index: 999;
+      pointer-events: none;
+      padding: 8px 11px;
+      border-radius: 999px;
+      color: #061013;
+      background: var(--accent);
+      font-size: 12px;
+      font-weight: 900;
+      box-shadow: 0 14px 34px rgba(0,0,0,.34);
+    }
+    body.edit-mode.drag-active {
+      cursor: grabbing;
     }
     .nested-boxes {
       display: grid;
@@ -646,6 +678,7 @@ Visão e Criação: ideia de exploração visual, pauta ou leitura conectada a e
     const layoutKey = 'guido-command-layout-v1';
     let editMode = false;
     let draggedBox = null;
+    let pointerDrag = null;
 
     function restoreCustomLayout() {
       const saved = loadJson(layoutKey, null);
@@ -760,7 +793,7 @@ Visão e Criação: ideia de exploração visual, pauta ou leitura conectada a e
         const controls = document.createElement('div');
         controls.className = 'box-editor';
         controls.innerHTML = `
-          <button type="button" data-action="drag" draggable="true" title="Arraste para mover ou inserir em outro box">arrastar</button>
+          <button type="button" data-action="drag" title="Arraste para mover ou inserir em outro box">arrastar</button>
           <button type="button" data-action="wider">largura</button>
           <button type="button" data-action="copy">duplicar</button>
           <button type="button" data-action="delete">excluir</button>
@@ -844,24 +877,11 @@ Visão e Criação: ideia de exploração visual, pauta ou leitura conectada a e
     }
 
     function enableBoxDragging() {
-      const grid = document.querySelector('main.grid');
-      grid.addEventListener('dragover', handleGridDragOver);
-      grid.addEventListener('drop', handleGridDrop);
-
       document.querySelectorAll('.card, .hero, .status').forEach(box => {
         const handle = box.querySelector(':scope > .box-editor [data-action="drag"]');
         if (!handle || handle.dataset.dragReady === '1') return;
         handle.dataset.dragReady = '1';
-        handle.addEventListener('dragstart', event => startBoxDrag(event, box));
-        handle.addEventListener('dragend', finishBoxDrag);
-      });
-
-      document.querySelectorAll('.card').forEach(box => {
-        if (box.dataset.dropReady === '1') return;
-        box.dataset.dropReady = '1';
-        box.addEventListener('dragover', handleBoxDragOver);
-        box.addEventListener('dragleave', handleBoxDragLeave);
-        box.addEventListener('drop', handleBoxDrop);
+        handle.addEventListener('pointerdown', event => startPointerDrag(event, box));
       });
     }
 
@@ -869,62 +889,93 @@ Visão e Criação: ideia de exploração visual, pauta ou leitura conectada a e
       document.querySelectorAll('.dragging-box, .drop-target').forEach(box => {
         box.classList.remove('dragging-box', 'drop-target');
       });
+      document.querySelectorAll('.drag-ghost, .drop-hint').forEach(el => el.remove());
+      document.body.classList.remove('drag-active');
+      window.removeEventListener('pointermove', movePointerDrag);
+      window.removeEventListener('pointerup', endPointerDrag);
+      pointerDrag = null;
       draggedBox = null;
     }
 
-    function startBoxDrag(event, box) {
+    function startPointerDrag(event, box) {
       if (!editMode) return;
-      draggedBox = box;
-      box.classList.add('dragging-box');
-      event.dataTransfer.effectAllowed = 'move';
-      event.dataTransfer.setData('text/plain', 'guido-command-box');
-    }
-
-    function finishBoxDrag() {
-      document.querySelectorAll('.dragging-box, .drop-target').forEach(box => {
-        box.classList.remove('dragging-box', 'drop-target');
-      });
-      draggedBox = null;
-    }
-
-    function handleGridDragOver(event) {
-      if (!draggedBox) return;
-      event.preventDefault();
-      event.dataTransfer.dropEffect = 'move';
-    }
-
-    function handleGridDrop(event) {
-      if (!draggedBox) return;
-      if (event.target.closest('.card') && event.target.closest('.card') !== draggedBox) return;
-      event.preventDefault();
-      document.querySelector('main.grid').appendChild(draggedBox);
-      refreshEditorAfterMove();
-    }
-
-    function handleBoxDragOver(event) {
-      if (!draggedBox) return;
-      const target = event.currentTarget;
-      if (target === draggedBox || draggedBox.contains(target)) return;
+      if (event.button !== undefined && event.button !== 0) return;
       event.preventDefault();
       event.stopPropagation();
-      target.classList.add('drop-target');
-      event.dataTransfer.dropEffect = 'move';
+
+      draggedBox = box;
+      const rect = box.getBoundingClientRect();
+      const ghost = box.cloneNode(true);
+      ghost.querySelectorAll('.box-editor').forEach(el => el.remove());
+      ghost.classList.add('drag-ghost');
+      ghost.style.left = rect.left + 'px';
+      ghost.style.top = rect.top + 'px';
+      ghost.style.width = rect.width + 'px';
+      document.body.appendChild(ghost);
+
+      const hint = document.createElement('div');
+      hint.className = 'drop-hint';
+      hint.textContent = 'solte para inserir';
+      document.body.appendChild(hint);
+
+      pointerDrag = {
+        box,
+        ghost,
+        hint,
+        offsetX: event.clientX - rect.left,
+        offsetY: event.clientY - rect.top,
+        target: null
+      };
+
+      box.classList.add('dragging-box');
+      document.body.classList.add('drag-active');
+      window.addEventListener('pointermove', movePointerDrag);
+      window.addEventListener('pointerup', endPointerDrag, { once: true });
+      movePointerDrag(event);
     }
 
-    function handleBoxDragLeave(event) {
-      const target = event.currentTarget;
-      if (!target.contains(event.relatedTarget)) {
-        target.classList.remove('drop-target');
+    function movePointerDrag(event) {
+      if (!pointerDrag) return;
+      event.preventDefault();
+
+      const x = event.clientX - pointerDrag.offsetX;
+      const y = event.clientY - pointerDrag.offsetY;
+      pointerDrag.ghost.style.transform = `translate3d(${x - pointerDrag.ghost.offsetLeft}px, ${y - pointerDrag.ghost.offsetTop}px, 0) scale(.98)`;
+      pointerDrag.hint.style.display = 'block';
+      pointerDrag.hint.style.left = `${event.clientX + 14}px`;
+      pointerDrag.hint.style.top = `${event.clientY + 14}px`;
+
+      const target = findDropTarget(event.clientX, event.clientY);
+      document.querySelectorAll('.drop-target').forEach(box => {
+        if (box !== target) box.classList.remove('drop-target');
+      });
+
+      pointerDrag.target = target;
+      if (target) {
+        target.classList.add('drop-target');
+        pointerDrag.hint.textContent = 'solte dentro deste box';
+      } else {
+        pointerDrag.hint.textContent = 'solte no painel principal';
       }
     }
 
-    function handleBoxDrop(event) {
-      if (!draggedBox) return;
-      const target = event.currentTarget;
-      if (target === draggedBox || draggedBox.contains(target)) return;
+    function endPointerDrag(event) {
+      if (!pointerDrag) return;
       event.preventDefault();
-      event.stopPropagation();
-      getNestedBoxContainer(target).appendChild(draggedBox);
+
+      const snapshots = snapshotMovableBoxes();
+      const target = pointerDrag.target;
+
+      if (target) {
+        getNestedBoxContainer(target).appendChild(pointerDrag.box);
+      } else {
+        document.querySelector('main.grid').appendChild(pointerDrag.box);
+      }
+
+      animateLayoutFrom(snapshots);
+      pointerDrag.ghost.remove();
+      pointerDrag.hint.remove();
+      document.body.classList.remove('drag-active');
       refreshEditorAfterMove();
     }
 
@@ -942,9 +993,55 @@ Visão e Criação: ideia de exploração visual, pauta ou leitura conectada a e
       document.querySelectorAll('.dragging-box, .drop-target').forEach(box => {
         box.classList.remove('dragging-box', 'drop-target');
       });
+      window.removeEventListener('pointermove', movePointerDrag);
+      pointerDrag = null;
       draggedBox = null;
       addBoxControls();
       enableBoxDragging();
+    }
+
+    function findDropTarget(x, y) {
+      if (!pointerDrag) return null;
+      pointerDrag.ghost.style.display = 'none';
+      pointerDrag.hint.style.display = 'none';
+      const elements = document.elementsFromPoint(x, y);
+      pointerDrag.ghost.style.display = '';
+      pointerDrag.hint.style.display = 'block';
+
+      return elements.find(el => {
+        if (!el.classList || !el.classList.contains('card')) return false;
+        if (el === pointerDrag.box || pointerDrag.box.contains(el)) return false;
+        if (el.closest('.editor-toolbar') || el.closest('.box-editor')) return false;
+        return true;
+      }) || null;
+    }
+
+    function snapshotMovableBoxes() {
+      const map = new Map();
+      document.querySelectorAll('.card, .hero, .status').forEach(el => {
+        map.set(el, el.getBoundingClientRect());
+      });
+      return map;
+    }
+
+    function animateLayoutFrom(snapshots) {
+      requestAnimationFrame(() => {
+        snapshots.forEach((before, el) => {
+          if (!document.body.contains(el)) return;
+          const after = el.getBoundingClientRect();
+          const dx = before.left - after.left;
+          const dy = before.top - after.top;
+          if (Math.abs(dx) < 1 && Math.abs(dy) < 1) return;
+
+          el.animate([
+            { transform: `translate(${dx}px, ${dy}px)` },
+            { transform: 'translate(0, 0)' }
+          ], {
+            duration: 260,
+            easing: 'cubic-bezier(.2,.8,.2,1)'
+          });
+        });
+      });
     }
 
     function ensureGridHasContent() {
