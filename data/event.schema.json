@@ -1,0 +1,49 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://guidorafaelchaves.github.io/guido-os/data/event.schema.json",
+  "title": "Guido OS Event",
+  "description": "Evento canonico compartilhado entre Radar da Vida, Command Center, Guido Dividend System e Gestor de Imoveis.",
+  "type": "object",
+  "required": ["id", "createdAt", "date", "source", "system", "category", "type", "description", "status"],
+  "properties": {
+    "id": { "type": "string" },
+    "createdAt": { "type": "string", "format": "date-time" },
+    "date": { "type": "string", "format": "date" },
+    "source": {
+      "type": "string",
+      "enum": ["manual", "whatsapp", "api", "import", "system"]
+    },
+    "system": {
+      "type": "string",
+      "enum": ["radar-da-vida", "command-center", "guido-dividend-system", "gestor-imoveis", "tg-charge", "juridico", "piuta", "manual"]
+    },
+    "project": { "type": "string" },
+    "category": { "type": "string" },
+    "type": { "type": "string" },
+    "description": { "type": "string" },
+    "amount": { "type": ["number", "null"] },
+    "currency": { "type": "string", "default": "BRL" },
+    "status": {
+      "type": "string",
+      "enum": ["novo", "pendente", "recebido", "pago", "concluido", "cancelado", "alerta", "arquivado"]
+    },
+    "entity": {
+      "type": "object",
+      "properties": {
+        "kind": { "type": "string" },
+        "name": { "type": "string" },
+        "id": { "type": "string" }
+      },
+      "additionalProperties": true
+    },
+    "tags": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "metadata": {
+      "type": "object",
+      "additionalProperties": true
+    }
+  },
+  "additionalProperties": true
+}
