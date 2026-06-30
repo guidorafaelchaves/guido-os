@@ -1,0 +1,64 @@
+{
+  "version": "0.1.0",
+  "updatedAt": "2026-06-30",
+  "principle": "Um cerebro central de eventos, varios paineis especializados.",
+  "core": {
+    "id": "radar-da-vida",
+    "name": "Radar da Vida",
+    "role": "Nucleo de memoria operacional e banco de eventos estruturados",
+    "currentEndpoint": "https://radar-de-vida-webhook.onrender.com/",
+    "futureApi": {
+      "events": "/api/events",
+      "todaySummary": "/api/summary/today",
+      "monthSummary": "/api/summary/month",
+      "projects": "/api/projects"
+    }
+  },
+  "modules": [
+    {
+      "id": "command-center",
+      "name": "Guido Command Center",
+      "role": "Tela inicial executiva",
+      "reads": ["events", "summaries", "alerts", "projects"],
+      "writes": ["manual-events", "questions", "quick-notes"],
+      "status": "active"
+    },
+    {
+      "id": "guido-dividend-system",
+      "name": "Guido Dividend System",
+      "role": "Modulo financeiro de B3, FIIs, dividendos e dados brutos por ativo",
+      "url": "https://guidorafaelchaves.github.io/guido-dividend-system/#sistema",
+      "reads": ["investment-events", "asset-history"],
+      "writes": ["dividend-events", "asset-events", "monthly-income-summary"],
+      "status": "active"
+    },
+    {
+      "id": "gestor-imoveis",
+      "name": "Gestor de Imoveis",
+      "role": "Modulo patrimonial para contratos, alugueis, despesas, manutencoes e vistorias",
+      "reads": ["property-events", "payment-events", "contract-events"],
+      "writes": ["rent-events", "maintenance-events", "contract-events", "inspection-events"],
+      "status": "planned"
+    },
+    {
+      "id": "tg-charge",
+      "name": "T&G Charge",
+      "role": "Modulo de carregadores veiculares, pontos parceiros, recebiveis e repasse de 15% ao ponto",
+      "reads": ["charging-events", "partner-events", "payment-events"],
+      "writes": ["session-events", "revenue-events", "maintenance-events"],
+      "status": "planned"
+    }
+  ],
+  "eventCategories": [
+    "Investimentos",
+    "Imoveis",
+    "Juridico",
+    "T&G",
+    "T&G Charge",
+    "Piuta",
+    "Rotina",
+    "Saude",
+    "Viagens",
+    "IA"
+  ]
+}
