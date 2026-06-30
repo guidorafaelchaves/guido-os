@@ -3,12 +3,12 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Guido Command Center</title>
+  <title>Guido OS · Command Center</title>
   <style>
     :root {
       --bg: #0b0f14;
-      --panel: rgba(20, 27, 36, 0.84);
-      --panel2: rgba(12, 18, 27, 0.92);
+      --panel: rgba(20, 27, 36, 0.86);
+      --panel2: rgba(12, 18, 27, 0.94);
       --text: #e8edf4;
       --muted: #9da8b8;
       --accent: #66d9ef;
@@ -59,32 +59,17 @@
       letter-spacing: .18em;
       text-transform: uppercase;
       font-size: 12px;
-      font-weight: 700;
+      font-weight: 800;
     }
-    h1 { margin: 8px 0 4px; font-size: clamp(32px, 5vw, 60px); line-height: 1; }
-    .subtitle { color: var(--muted); font-size: 16px; max-width: 780px; line-height: 1.55; }
+    h1 { margin: 8px 0 4px; font-size: clamp(36px, 5vw, 66px); line-height: 1; }
+    .subtitle { color: var(--muted); font-size: 16px; max-width: 820px; line-height: 1.55; }
 
-    .searchbar {
-      margin-top: 24px;
-      display: flex;
-      gap: 10px;
-      background: var(--panel2);
-      border: 1px solid var(--border);
-      border-radius: 18px;
-      padding: 10px;
-    }
-    input, select, button {
+    input, select, button, textarea {
       font: inherit;
       border: 0;
       outline: 0;
     }
-    input {
-      flex: 1;
-      color: var(--text);
-      background: transparent;
-      padding: 12px 14px;
-      font-size: 18px;
-    }
+
     select, button {
       border-radius: 13px;
       padding: 0 14px;
@@ -93,7 +78,9 @@
       border: 1px solid var(--border);
       cursor: pointer;
     }
-    button.primary { background: linear-gradient(135deg, #198cb5, #2ec4b6); font-weight: 800; color: #031016; }
+    button.primary { background: linear-gradient(135deg, #198cb5, #2ec4b6); font-weight: 900; color: #031016; }
+    .ghost-button { background: rgba(255,255,255,.055); color: var(--text); }
+    .mini-button { min-height: 42px; font-weight: 800; white-space: nowrap; }
 
     .executive-console {
       margin-top: 22px;
@@ -104,34 +91,38 @@
       border-radius: 20px;
       padding: 12px;
     }
-    .executive-console textarea {
+    .executive-console textarea, .notes textarea, .event-capture textarea {
       width: 100%;
-      min-height: 86px;
       resize: vertical;
-      border: 0;
-      outline: 0;
       color: var(--text);
       background: rgba(0,0,0,.16);
       border: 1px solid var(--border);
       border-radius: 16px;
       padding: 14px;
-      font: inherit;
-      font-size: 16px;
       line-height: 1.45;
     }
+    .executive-console textarea { min-height: 86px; font-size: 16px; }
+    .notes textarea { min-height: 150px; }
+    .event-capture textarea { min-height: 120px; }
+
     .console-row {
       display: grid;
-      grid-template-columns: 1fr auto auto auto auto;
+      grid-template-columns: 1fr 180px auto auto auto;
       gap: 8px;
       align-items: stretch;
     }
-    .console-row input { min-width: 0; }
-    .mini-button { min-height: 42px; font-weight: 700; white-space: nowrap; }
-    .ghost-button { background: rgba(255,255,255,.055); color: var(--text); }
+    .console-row input, .event-grid input, .event-grid select {
+      min-width: 0;
+      color: var(--text);
+      background: rgba(255,255,255,.06);
+      border: 1px solid var(--border);
+      border-radius: 13px;
+      padding: 12px 14px;
+    }
     .console-help { color: var(--muted); font-size: 12px; line-height: 1.45; }
 
     .status { padding: 24px; display: grid; gap: 14px; }
-    .clock { font-size: 42px; font-weight: 800; }
+    .clock { font-size: 42px; font-weight: 900; }
     .date { color: var(--muted); }
     .quote { border-left: 3px solid var(--gold); padding-left: 14px; color: #dbe2ec; line-height: 1.5; }
 
@@ -146,10 +137,30 @@
     .span-5 { grid-column: span 5; }
     .span-6 { grid-column: span 6; }
     .span-7 { grid-column: span 7; }
+    .span-8 { grid-column: span 8; }
     .span-12 { grid-column: span 12; }
 
-    .card h2 { margin: 0 0 14px; font-size: 18px; display:flex; align-items:center; justify-content:space-between; }
-    .tag { color: var(--muted); font-size: 12px; font-weight: 600; }
+    .card h2 { margin: 0 0 14px; font-size: 18px; display:flex; align-items:center; justify-content:space-between; gap: 12px; }
+    .tag { color: var(--muted); font-size: 12px; font-weight: 700; }
+    .tiny { font-size: 12px; color: var(--muted); line-height: 1.5; }
+    .pillbar { display:flex; flex-wrap:wrap; gap:8px; margin-top:12px; }
+    .pill { border:1px solid var(--border); background:rgba(255,255,255,.06); padding:7px 10px; border-radius:999px; color:#dce6f1; font-size:12px; }
+
+    .mission, .radar-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+    }
+    .mission-item, .radar-card, .event-row {
+      padding: 16px;
+      border-radius: 18px;
+      background: rgba(255,255,255,.055);
+      border: 1px solid var(--border);
+    }
+    .mission-item strong, .radar-card strong { display:block; margin-bottom: 6px; }
+    .mission-item p, .radar-card p { margin:0; color: var(--muted); font-size: 13px; line-height: 1.45; }
+    .metric { font-size: 30px; font-weight: 900; color: var(--accent); margin: 4px 0; }
+
     .links { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; }
     .links.three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
     .link {
@@ -168,38 +179,17 @@
     .link:hover { transform: translateY(-2px); background: rgba(102,217,239,.14); border-color: rgba(102,217,239,.28); }
     .link small { color: var(--muted); font-size: 11px; }
 
-    .mission {
+    .event-grid {
       display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 12px;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 8px;
+      margin-bottom: 10px;
     }
-    .mission-item {
-      padding: 16px;
-      border-radius: 18px;
-      background: rgba(255,255,255,.055);
-      border: 1px solid var(--border);
-    }
-    .mission-item strong { display:block; margin-bottom: 6px; }
-    .mission-item p { margin:0; color: var(--muted); font-size: 13px; line-height: 1.45; }
-
-    .notes textarea {
-      width: 100%;
-      min-height: 150px;
-      resize: vertical;
-      border-radius: 16px;
-      border: 1px solid var(--border);
-      background: rgba(0,0,0,.18);
-      color: var(--text);
-      padding: 14px;
-      font: inherit;
-      outline: 0;
-    }
-
-    .tiny { font-size: 12px; color: var(--muted); line-height: 1.5; }
-    .pillbar { display:flex; flex-wrap:wrap; gap:8px; margin-top:12px; }
-    .pill { border:1px solid var(--border); background:rgba(255,255,255,.06); padding:7px 10px; border-radius:999px; color:#dce6f1; font-size:12px; }
-
-
+    .event-actions { display:flex; gap:8px; flex-wrap:wrap; margin-top: 10px; }
+    .events-list { display:grid; gap:10px; margin-top: 12px; max-height: 360px; overflow:auto; }
+    .event-row { padding: 12px; }
+    .event-row strong { display:block; font-size: 14px; }
+    .event-row small { color: var(--muted); display:block; margin-top: 4px; }
 
     .weather-panel {
       margin-top: 16px;
@@ -215,202 +205,21 @@
       min-height: 96px;
     }
     .weather-day strong { display:block; font-size: 13px; margin-bottom: 6px; }
-    .weather-day .temp { font-size: 20px; font-weight: 800; }
+    .weather-day .temp { font-size: 20px; font-weight: 900; }
     .weather-day small { color: var(--muted); display:block; margin-top: 4px; line-height: 1.35; }
-
-    .editor-toolbar {
-      position: fixed;
-      right: 20px;
-      bottom: 20px;
-      z-index: 50;
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      max-width: min(560px, calc(100vw - 40px));
-      padding: 10px;
-      border: 1px solid var(--border);
-      border-radius: 18px;
-      background: rgba(7, 11, 17, .9);
-      box-shadow: var(--shadow);
-      backdrop-filter: blur(18px);
-    }
-    .editor-toolbar button {
-      min-height: 38px;
-      font-size: 13px;
-      font-weight: 800;
-      white-space: nowrap;
-    }
-    body.edit-mode [data-editable="1"] {
-      outline: 1px dashed rgba(102,217,239,.6);
-      outline-offset: 3px;
-      border-radius: 8px;
-      cursor: text;
-    }
-    .editable-fragment {
-      display: inline;
-      min-width: 1ch;
-    }
-    body.edit-mode .card,
-    body.edit-mode .hero,
-    body.edit-mode .status {
-      position: relative;
-      border-color: rgba(102,217,239,.38);
-    }
-    .box-editor {
-      position: absolute;
-      top: 10px;
-      right: 10px;
-      z-index: 8;
-      display: none;
-      gap: 6px;
-      padding: 6px;
-      border-radius: 12px;
-      background: rgba(0,0,0,.48);
-      border: 1px solid var(--border);
-      backdrop-filter: blur(12px);
-    }
-    body.edit-mode .card:hover > .box-editor,
-    body.edit-mode .hero:hover > .box-editor,
-    body.edit-mode .status:hover > .box-editor {
-      display: flex;
-    }
-    .box-editor button {
-      min-height: 30px;
-      padding: 0 8px;
-      border-radius: 9px;
-      font-size: 12px;
-      background: rgba(255,255,255,.1);
-    }
-    .box-editor [data-action="drag"] {
-      cursor: grab;
-      color: var(--accent);
-      touch-action: none;
-      user-select: none;
-    }
-    body.edit-mode .dragging-box {
-      opacity: .26;
-      outline: 2px solid rgba(102,217,239,.75);
-    }
-    body.edit-mode .drop-target {
-      outline: 2px solid rgba(117,209,124,.9);
-      outline-offset: 10px;
-      transform: scale(1.01);
-      transition: transform .18s ease, outline-color .18s ease, background .18s ease;
-      background: rgba(117,209,124,.075);
-    }
-    .drag-ghost {
-      position: fixed;
-      z-index: 1000;
-      pointer-events: none;
-      width: min(420px, 72vw);
-      max-height: 360px;
-      overflow: hidden;
-      opacity: .92;
-      transform: translate3d(0, 0, 0) scale(.98);
-      box-shadow: 0 32px 80px rgba(0,0,0,.48);
-      border: 1px solid rgba(102,217,239,.5);
-      transition: transform .08s linear;
-    }
-    .drop-hint {
-      display: none;
-      position: fixed;
-      z-index: 999;
-      pointer-events: none;
-      padding: 8px 11px;
-      border-radius: 999px;
-      color: #061013;
-      background: var(--accent);
-      font-size: 12px;
-      font-weight: 900;
-      box-shadow: 0 14px 34px rgba(0,0,0,.34);
-    }
-    body.edit-mode.drag-active {
-      cursor: grabbing;
-      user-select: none;
-    }
-    .nested-boxes {
-      display: grid;
-      gap: 12px;
-      margin-top: 14px;
-      padding-top: 14px;
-      border-top: 1px dashed rgba(255,255,255,.14);
-    }
-    .nested-boxes:empty {
-      display: none;
-    }
-    .nested-boxes .card {
-      box-shadow: none;
-      background: rgba(255,255,255,.045);
-    }
-    .edit-empty {
-      min-height: 120px;
-      border: 1px dashed rgba(255,255,255,.16);
-      border-radius: 16px;
-      display: grid;
-      place-items: center;
-      color: var(--muted);
-    }
-
-    .block-actions { display:flex; gap:8px; align-items:center; }
-    .add-fav {
-      font-size: 12px;
-      padding: 6px 9px;
-      border-radius: 999px;
-      color: #dce6f1;
-      background: rgba(255,255,255,.07);
-    }
-    .fav-form {
-      display: none;
-      grid-template-columns: 1fr 1.4fr auto;
-      gap: 8px;
-      margin: 0 0 12px;
-      padding: 10px;
-      border-radius: 16px;
-      background: rgba(0,0,0,.16);
-      border: 1px solid var(--border);
-    }
-    .fav-form.open { display: grid; }
-    .fav-form input {
-      font-size: 13px;
-      padding: 10px;
-      border-radius: 11px;
-      border: 1px solid var(--border);
-      background: rgba(255,255,255,.06);
-    }
-    .fav-form button { min-height: 38px; font-size: 12px; }
-    .link .delete-link {
-      width: 22px;
-      height: 22px;
-      border-radius: 999px;
-      padding: 0;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      opacity: .45;
-      flex: 0 0 auto;
-      color: #ffd2d2;
-      background: rgba(255, 107, 107, .10);
-    }
-    .link .delete-link:hover { opacity: 1; background: rgba(255, 107, 107, .22); }
-    .link .label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .empty-custom { color: var(--muted); font-size: 12px; padding: 8px 2px 0; }
-
-    @media (max-width: 900px) {
-      .weather-panel { grid-template-columns: repeat(2, minmax(0,1fr)); }
-      .fav-form { grid-template-columns: 1fr; }
-    }
 
     footer { color: var(--muted); text-align: center; padding: 28px 0 8px; font-size: 12px; }
 
     @media (max-width: 1100px) {
       header { grid-template-columns: 1fr; }
-      .span-3, .span-4, .span-5, .span-6, .span-7 { grid-column: span 12; }
-      .mission { grid-template-columns: repeat(2, 1fr); }
+      .span-3, .span-4, .span-5, .span-6, .span-7, .span-8 { grid-column: span 12; }
+      .mission, .radar-grid { grid-template-columns: repeat(2, 1fr); }
+      .event-grid { grid-template-columns: 1fr 1fr; }
     }
     @media (max-width: 720px) {
       body { padding: 14px; }
-      .links, .links.three, .mission { grid-template-columns: 1fr; }
-      .searchbar, .console-row { grid-template-columns: 1fr; flex-direction: column; }
+      .links, .links.three, .mission, .radar-grid, .event-grid { grid-template-columns: 1fr; }
+      .console-row { grid-template-columns: 1fr; }
       select, button { min-height: 44px; }
     }
   </style>
@@ -419,25 +228,34 @@
   <div class="shell">
     <header>
       <section class="hero">
-        <div class="eyebrow">Guido Rafael Chaves · portal pessoal</div>
+        <div class="eyebrow">Guido OS · kernel pessoal em evolução</div>
         <h1>Command Center</h1>
-        <p class="subtitle">Primeiro contato diário com o PC: advocacia, empresas, T&G Solar, Sítio Piutá, investimentos, IA, produtividade, veículos, energia e projetos prioritários em uma única tela.</p>
+        <p class="subtitle">Tela executiva para acionar o Radar da Vida, Guido Dividend System, Gestor de Imóveis, T&G Charge, jurídico, Piutá e rotina. O Radar da Vida passa a ser o núcleo de memória; os demais módulos leem e escrevem eventos.</p>
         <form class="executive-console" onsubmit="runExecutiveSearch(event)">
-          <textarea id="dailyQuestion" autofocus placeholder="Pergunte ao Guido GPT: resuma meu dia, monte uma estratégia, procure um sistema, revise uma tese, organize uma decisão, analise um projeto..."></textarea>
+          <textarea id="dailyQuestion" autofocus placeholder="Pergunte ao Guido OS: resuma meu dia, registre um evento, analise dividendos, verifique imóveis, planeje T&G Charge, organize uma decisão jurídica..."></textarea>
           <div class="console-row">
-            <input id="quickSearch" placeholder="Busca rápida opcional: processo, site, pauta, termo técnico..." />
-            <button class="primary mini-button" type="button" onclick="askChatGPT()">Perguntar ao ChatGPT</button>
+            <input id="quickSearch" placeholder="Busca rápida: ativo, imóvel, processo, projeto, fornecedor..." />
+            <select id="commandMode" aria-label="Modo do comando">
+              <option value="todos">Todos os módulos</option>
+              <option value="radar-da-vida">Radar da Vida</option>
+              <option value="guido-dividend-system">Dividend System</option>
+              <option value="gestor-imoveis">Gestor de Imóveis</option>
+              <option value="tg-charge">T&G Charge</option>
+              <option value="juridico">Jurídico</option>
+              <option value="piuta">Piutá</option>
+            </select>
+            <button class="primary mini-button" type="button" onclick="askChatGPT()">Perguntar</button>
             <button class="mini-button ghost-button" type="button" onclick="openSearch('google')">Google</button>
-            <button class="mini-button ghost-button" type="button" onclick="openSearch('perplexity')">Perplexity</button>
             <button class="mini-button ghost-button" type="submit">Buscar geral</button>
           </div>
-          <div class="console-help">Modo executivo: o botão ChatGPT envia sua pergunta com o prompt-base da Home Page Diária, cruzando data, hora, clima, agenda/contexto informado e seus focos recorrentes. Para integração direta por API será necessário servidor ou chave própria; esta versão local abre o ChatGPT instantaneamente com o comando pronto.</div>
+          <div class="console-help">Modo integrado: o comando envia ao ChatGPT um contexto estruturado com módulo escolhido, clima, eventos locais do Radar, notas e arquitetura do Guido OS. A próxima fase é conectar este painel à API real do Radar.</div>
         </form>
         <div class="pillbar">
-          <span class="pill">Novo galpão T&G: missão prioritária</span>
-          <span class="pill">Carteira B3 / Dividend System</span>
-          <span class="pill">Processos Ielma / Hapvida / Unimed</span>
-          <span class="pill">Piutá / retiros / site</span>
+          <span class="pill">Radar da Vida = núcleo de eventos</span>
+          <span class="pill">Command Center = tela</span>
+          <span class="pill">Dividend System = módulo financeiro</span>
+          <span class="pill">Gestor de Imóveis = módulo patrimonial</span>
+          <span class="pill">T&G Charge = módulo futuro</span>
         </div>
       </section>
 
@@ -446,166 +264,263 @@
           <div class="clock" id="clock">--:--</div>
           <div class="date" id="date">carregando...</div>
         </div>
-        <div class="quote">“Organizar o dia antes de abrir o ruído. Primeiro: estratégia, caixa, prazos, clientes, família e construção patrimonial.”</div>
-        <div class="tiny">Dica: salve este arquivo localmente e defina no Chrome como página inicial.</div>
+        <div class="quote">“Um cérebro central de eventos; vários painéis especializados. Primeiro capturar, depois classificar, depois decidir.”</div>
         <div id="weatherSummary" class="tiny">Clima: carregando previsão para Garanhuns...</div>
         <div class="weather-panel" id="weatherPanel"></div>
       </aside>
     </header>
 
     <main class="grid">
+      <section class="card span-12" id="radarExecutive">
+        <h2>Radar Executivo <span class="tag">eventos locais + arquitetura integrada</span></h2>
+        <div class="radar-grid">
+          <div class="radar-card"><strong>Eventos hoje</strong><div class="metric" id="metricToday">0</div><p>Registros criados hoje no Radar local deste navegador.</p></div>
+          <div class="radar-card"><strong>Financeiro</strong><div class="metric" id="metricMoney">R$ 0</div><p>Soma simples dos eventos com valor. Não avalia pesos de portfólio.</p></div>
+          <div class="radar-card"><strong>Imóveis pendentes</strong><div class="metric" id="metricProperties">0</div><p>Eventos de imóveis marcados como pendentes ou alerta.</p></div>
+          <div class="radar-card"><strong>Alertas ativos</strong><div class="metric" id="metricAlerts">0</div><p>Eventos pendentes, alertas ou decisões que pedem ação.</p></div>
+        </div>
+      </section>
+
       <section class="card span-12">
         <h2>Missões centrais <span class="tag">visão executiva</span></h2>
         <div class="mission">
-          <div class="mission-item"><strong>Galpão T&G</strong><p>Estrutura simples e funcional de aproximadamente 300 m²: showroom, estoque, oficina, área técnica e expansão modular.</p></div>
-          <div class="mission-item"><strong>Advocacia crítica</strong><p>Prazos, processos sensíveis, decisões, petições, bloqueios, saúde da mãe e estratégia jurídica.</p></div>
-          <div class="mission-item"><strong>Renda e patrimônio</strong><p>B3, FIIs, proventos, preço médio, ranking de ativos, Guido Dividend System e decisões de alocação.</p></div>
-          <div class="mission-item"><strong>Piutá</strong><p>Hospedagem, retiros, site, agenda de disponibilidade, turismo rural, projeto social e Salve Sertão.</p></div>
+          <div class="mission-item"><strong>Radar da Vida</strong><p>Kernel da memória: WhatsApp, registros manuais, eventos estruturados, resumos e histórico operacional.</p></div>
+          <div class="mission-item"><strong>Dividend System</strong><p>Módulo de B3, FIIs, proventos, dados brutos por ativo e eventos financeiros enviados ao Radar.</p></div>
+          <div class="mission-item"><strong>Gestor de Imóveis</strong><p>Módulo para aluguéis, contratos, IPTU, condomínio, manutenção, vistorias, caixa e alertas.</p></div>
+          <div class="mission-item"><strong>T&G Charge</strong><p>Módulo futuro para carregadores, parceiros, sessões, receita e repasse de 15% ao ponto.</p></div>
         </div>
       </section>
 
-      <section class="card span-4" data-section="juridico">
-        <h2>⚖️ Jurídico <span class="block-actions"><span class="tag">tribunais e sistemas</span><button class="add-fav" type="button" onclick="toggleFavForm('juridico')">+ site</button></span></h2>
-        <form class="fav-form" data-form="juridico" onsubmit="addFavorite(event, 'juridico')"><input name="title" placeholder="Nome do site"><input name="url" placeholder="https://..."><button type="submit">Adicionar</button></form>
-        <div class="links" data-links="juridico">
-          <a class="link" href="https://pje.jus.br/" target="_blank">PJe <small>nacional</small></a>
-          <a class="link" href="https://pje.trf5.jus.br/" target="_blank">PJe TRF5 <small>federal</small></a>
-          <a class="link" href="https://www.jfpe.jus.br/" target="_blank">JFPE <small>PE</small></a>
-          <a class="link" href="https://www.trf5.jus.br/" target="_blank">TRF5 <small>2º grau</small></a>
-          <a class="link" href="https://www.tjpe.jus.br/" target="_blank">TJPE <small>estadual</small></a>
-          <a class="link" href="https://www.stj.jus.br/" target="_blank">STJ <small>superior</small></a>
-          <a class="link" href="https://portal.stf.jus.br/" target="_blank">STF <small>constitucional</small></a>
-          <a class="link" href="https://esaj.tjsp.jus.br/" target="_blank">e-SAJ SP <small>Adamantina</small></a>
-          <a class="link" href="https://www.jusbrasil.com.br/" target="_blank">Jusbrasil <small>pesquisa</small></a>
-          <a class="link" href="https://www.gov.br/pt-br" target="_blank">Gov.br <small>assinaturas</small></a>
+      <section class="card span-7 event-capture">
+        <h2>Captura para o Radar <span class="tag">evento JSON local</span></h2>
+        <div class="event-grid">
+          <select id="eventSystem">
+            <option value="radar-da-vida">Radar da Vida</option>
+            <option value="guido-dividend-system">Dividend System</option>
+            <option value="gestor-imoveis">Gestor de Imóveis</option>
+            <option value="tg-charge">T&G Charge</option>
+            <option value="juridico">Jurídico</option>
+            <option value="piuta">Piutá</option>
+            <option value="manual">Manual</option>
+          </select>
+          <input id="eventCategory" placeholder="Categoria: Imóveis, Investimentos..." />
+          <input id="eventAmount" type="number" step="0.01" placeholder="Valor opcional" />
+          <select id="eventStatus">
+            <option value="novo">novo</option>
+            <option value="pendente">pendente</option>
+            <option value="recebido">recebido</option>
+            <option value="pago">pago</option>
+            <option value="concluido">concluído</option>
+            <option value="alerta">alerta</option>
+          </select>
         </div>
+        <textarea id="eventDescription" placeholder="Ex.: Recebi aluguel do imóvel X; MXRF11 pagou provento; confirmar OCPP do carregador; revisar prazo do processo..."></textarea>
+        <div class="event-actions">
+          <button class="primary" type="button" onclick="saveRadarEvent()">Salvar evento</button>
+          <button type="button" onclick="exportRadarEvents()">Exportar JSON</button>
+          <button class="ghost-button" type="button" onclick="clearRadarEvents()">Limpar eventos locais</button>
+        </div>
+        <div class="tiny">Por enquanto, estes eventos ficam no localStorage. Quando a API do Radar estiver pronta, esta mesma estrutura poderá ser enviada para POST /api/events.</div>
       </section>
 
-      <section class="card span-4" data-section="empresas">
-        <h2>🏢 Empresas <span class="block-actions"><span class="tag">T&G · Piutá · operação</span><button class="add-fav" type="button" onclick="toggleFavForm('empresas')">+ site</button></span></h2>
-        <form class="fav-form" data-form="empresas" onsubmit="addFavorite(event, 'empresas')"><input name="title" placeholder="Nome do site"><input name="url" placeholder="https://..."><button type="submit">Adicionar</button></form>
-        <div class="links" data-links="empresas">
-          <a class="link" href="https://www.gov.br/receitafederal/pt-br" target="_blank">Receita Federal <small>CNPJ</small></a>
-          <a class="link" href="https://www.gov.br/empresas-e-negocios/pt-br/redesim" target="_blank">Redesim <small>empresas</small></a>
-          <a class="link" href="https://inovasimples.redesim.gov.br/" target="_blank">Inova Simples <small>CNAE</small></a>
-          <a class="link" href="https://www.nfse.gov.br/EmissorNacional" target="_blank">NFS-e <small>emissor</small></a>
-          <a class="link" href="https://sitiopiuta.com.br/" target="_blank">Sítio Piutá <small>site</small></a>
-          <a class="link" href="https://www.google.com/business/" target="_blank">Google Perfil <small>negócios</small></a>
-          <a class="link" href="https://www.mercadopago.com.br/" target="_blank">Mercado Pago <small>recebíveis</small></a>
-          <a class="link" href="https://www.bancointer.com.br/" target="_blank">Banco Inter <small>PJ</small></a>
+      <section class="card span-5">
+        <h2>Últimos eventos <span class="tag">Radar local</span></h2>
+        <div class="events-list" id="eventsList"></div>
+      </section>
+
+      <section class="card span-4" data-section="radar">
+        <h2>Radar da Vida <span class="tag">kernel</span></h2>
+        <div class="links">
+          <a class="link" href="https://radar-de-vida-webhook.onrender.com/" target="_blank">Radar Webhook <small>Render</small></a>
+          <a class="link" href="data/event.schema.json" target="_blank">Schema de eventos <small>JSON</small></a>
+          <a class="link" href="data/guido-modules.json" target="_blank">Manifesto de módulos <small>JSON</small></a>
+          <a class="link" href="docs/arquitetura-guido-os-integrado.md" target="_blank">Arquitetura <small>docs</small></a>
         </div>
       </section>
 
       <section class="card span-4" data-section="investimentos">
-        <h2>💰 Investimentos <span class="block-actions"><span class="tag">B3 e dados</span><button class="add-fav" type="button" onclick="toggleFavForm('investimentos')">+ site</button></span></h2>
-        <form class="fav-form" data-form="investimentos" onsubmit="addFavorite(event, 'investimentos')"><input name="title" placeholder="Nome do site"><input name="url" placeholder="https://..."><button type="submit">Adicionar</button></form>
-        <div class="links" data-links="investimentos">
-          <a class="link" href="https://www.investidor.b3.com.br/" target="_blank">Área B3 <small>extratos</small></a>
-          <a class="link" href="https://statusinvest.com.br/" target="_blank">Status Invest <small>FIIs</small></a>
-          <a class="link" href="https://www.fundamentus.com.br/" target="_blank">Fundamentus <small>ações</small></a>
-          <a class="link" href="https://www.tradingview.com/" target="_blank">TradingView <small>gráficos</small></a>
-          <a class="link" href="https://investidor10.com.br/" target="_blank">Investidor10 <small>rankings</small></a>
-          <a class="link" href="https://brapi.dev/" target="_blank">Brapi <small>API</small></a>
+        <h2>Investimentos <span class="tag">B3 e dados</span></h2>
+        <div class="links">
           <a class="link" href="https://guidorafaelchaves.github.io/guido-dividend-system/#sistema" target="_blank">Dividend System <small>seu painel</small></a>
-          <a class="link" href="https://www.tesourodireto.com.br/" target="_blank">Tesouro Direto <small>títulos</small></a>
+          <a class="link" href="https://www.investidor.b3.com.br/" target="_blank">Área B3 <small>extratos</small></a>
+          <a class="link" href="https://brapi.dev/" target="_blank">Brapi <small>API</small></a>
+          <a class="link" href="https://statusinvest.com.br/" target="_blank">Status Invest <small>FIIs</small></a>
         </div>
       </section>
 
-      <section class="card span-3" data-section="ia">
-        <h2>🤖 IA <span class="block-actions"><span class="tag">copilotos</span><button class="add-fav" type="button" onclick="toggleFavForm('ia')">+ site</button></span></h2>
-        <form class="fav-form" data-form="ia" onsubmit="addFavorite(event, 'ia')"><input name="title" placeholder="Nome do site"><input name="url" placeholder="https://..."><button type="submit">Adicionar</button></form>
-        <div class="links" data-links="ia">
-          <a class="link" href="https://chatgpt.com/" target="_blank">ChatGPT</a>
-          <a class="link" href="https://claude.ai/" target="_blank">Claude</a>
-          <a class="link" href="https://gemini.google.com/" target="_blank">Gemini</a>
-          <a class="link" href="https://www.perplexity.ai/" target="_blank">Perplexity</a>
-          <a class="link" href="https://grok.com/" target="_blank">Grok</a>
-          <a class="link" href="https://github.com/" target="_blank">GitHub</a>
+      <section class="card span-4" data-section="imoveis">
+        <h2>Gestor de Imóveis <span class="tag">módulo patrimonial</span></h2>
+        <div class="mission-item">
+          <strong>Status: planejado</strong>
+          <p>Primeira versão deve cadastrar imóveis, contratos, aluguéis, despesas, manutenções, vistorias e alertas. Cada lançamento vira evento no Radar.</p>
         </div>
       </section>
 
-      <section class="card span-3" data-section="produtividade">
-        <h2>📅 Produtividade <span class="block-actions"><span class="tag">Google</span><button class="add-fav" type="button" onclick="toggleFavForm('produtividade')">+ site</button></span></h2>
-        <form class="fav-form" data-form="produtividade" onsubmit="addFavorite(event, 'produtividade')"><input name="title" placeholder="Nome do site"><input name="url" placeholder="https://..."><button type="submit">Adicionar</button></form>
-        <div class="links" data-links="produtividade">
-          <a class="link" href="https://mail.google.com/" target="_blank">Gmail</a>
-          <a class="link" href="https://calendar.google.com/" target="_blank">Agenda</a>
-          <a class="link" href="https://drive.google.com/" target="_blank">Drive</a>
-          <a class="link" href="https://docs.google.com/" target="_blank">Docs</a>
-          <a class="link" href="https://keep.google.com/" target="_blank">Keep</a>
-          <a class="link" href="https://contacts.google.com/" target="_blank">Contatos</a>
+      <section class="card span-4" data-section="juridico">
+        <h2>Jurídico <span class="tag">tribunais e sistemas</span></h2>
+        <div class="links">
+          <a class="link" href="https://pje.jus.br/" target="_blank">PJe <small>nacional</small></a>
+          <a class="link" href="https://pje.trf5.jus.br/" target="_blank">PJe TRF5 <small>federal</small></a>
+          <a class="link" href="https://www.jfpe.jus.br/" target="_blank">JFPE <small>PE</small></a>
+          <a class="link" href="https://esaj.tjsp.jus.br/" target="_blank">e-SAJ SP <small>Adamantina</small></a>
         </div>
       </section>
 
-      <section class="card span-3" data-section="energia">
-        <h2>⚡ Energia e EV <span class="block-actions"><span class="tag">solar</span><button class="add-fav" type="button" onclick="toggleFavForm('energia')">+ site</button></span></h2>
-        <form class="fav-form" data-form="energia" onsubmit="addFavorite(event, 'energia')"><input name="title" placeholder="Nome do site"><input name="url" placeholder="https://..."><button type="submit">Adicionar</button></form>
-        <div class="links" data-links="energia">
-          <a class="link" href="https://www.deyeinverter.com/" target="_blank">Deye</a>
-          <a class="link" href="https://www.byd.com/br" target="_blank">BYD</a>
-          <a class="link" href="https://solar.huawei.com/" target="_blank">Huawei Solar</a>
-          <a class="link" href="https://www.growatt.com/" target="_blank">Growatt</a>
-          <a class="link" href="https://www.goodwe.com/" target="_blank">GoodWe</a>
-          <a class="link" href="https://www.portal-solar.com.br/" target="_blank">Portal Solar</a>
+      <section class="card span-4" data-section="empresas">
+        <h2>Empresas <span class="tag">T&G · Piutá · operação</span></h2>
+        <div class="links">
+          <a class="link" href="https://www.gov.br/receitafederal/pt-br" target="_blank">Receita Federal <small>CNPJ</small></a>
+          <a class="link" href="https://inovasimples.redesim.gov.br/" target="_blank">Inova Simples <small>CNAE</small></a>
+          <a class="link" href="https://sitiopiuta.com.br/" target="_blank">Sítio Piutá <small>site</small></a>
+          <a class="link" href="https://www.mercadopago.com.br/" target="_blank">Mercado Pago <small>recebíveis</small></a>
         </div>
       </section>
 
-      <section class="card span-3" data-section="mobilidade">
-        <h2>🚗 Mobilidade <span class="block-actions"><span class="tag">viagens</span><button class="add-fav" type="button" onclick="toggleFavForm('mobilidade')">+ site</button></span></h2>
-        <form class="fav-form" data-form="mobilidade" onsubmit="addFavorite(event, 'mobilidade')"><input name="title" placeholder="Nome do site"><input name="url" placeholder="https://..."><button type="submit">Adicionar</button></form>
-        <div class="links" data-links="mobilidade">
-          <a class="link" href="https://www.uber.com/br/pt-br/" target="_blank">Uber</a>
-          <a class="link" href="https://www.waze.com/pt-BR/live-map/" target="_blank">Waze</a>
-          <a class="link" href="https://www.google.com/maps" target="_blank">Google Maps</a>
-          <a class="link" href="https://www.localiza.com/brasil/pt-br" target="_blank">Localiza</a>
-          <a class="link" href="https://www.starlink.com/br" target="_blank">Starlink</a>
-          <a class="link" href="https://www.haval.com.br/" target="_blank">Haval</a>
-        </div>
-      </section>
-
-      <section class="card span-5">
-        <h2>📌 Casos sensíveis <span class="tag">checklist diário</span></h2>
-        <div class="mission" style="grid-template-columns:1fr 1fr;">
-          <div class="mission-item"><strong>Ielma · TCU/JFPE</strong><p>Bloqueios, mínimo existencial, home care 24h, extratos, desbloqueios humanitários.</p></div>
-          <div class="mission-item"><strong>Unimed Caruaru</strong><p>Laudo de 12h, impugnação, prova técnica e necessidade de 24h.</p></div>
-          <div class="mission-item"><strong>Hapvida</strong><p>Execução de sentença: dano moral, inexigibilidade e astreintes.</p></div>
-          <div class="mission-item"><strong>Adamantina/SP</strong><p>Embargos, AJG, efeito suspensivo, impenhorabilidade e EPROC.</p></div>
+      <section class="card span-4" data-section="tg-charge">
+        <h2>T&G Charge <span class="tag">carregadores EV</span></h2>
+        <div class="mission-item">
+          <strong>Modelo base</strong>
+          <p>T&G dona do carregador; ponto recebe 15%; prioridade inicial para wallbox AC 7,4 kW monofásico com cobrança Pix/cartão via plataforma ou OCPP.</p>
         </div>
       </section>
 
       <section class="card span-7 notes">
-        <h2>🧠 Captura rápida <span class="tag">salva neste navegador</span></h2>
+        <h2>Notas rápidas <span class="tag">salvas neste navegador</span></h2>
         <textarea id="notes" placeholder="Anote aqui a primeira coisa do dia: prazo, ideia, cliente, compra, tarefa, tese jurídica, investimento, galpão, Piutá..."></textarea>
-        <div class="tiny">As notas ficam salvas no armazenamento local deste Chrome. Não sincroniza com a nuvem.</div>
+        <div class="tiny">Notas livres continuam separadas dos eventos estruturados do Radar.</div>
       </section>
 
-      <section class="card span-12" data-section="utilidades">
-        <h2>🌎 Utilidades rápidas <span class="block-actions"><span class="tag">uso cotidiano</span><button class="add-fav" type="button" onclick="toggleFavForm('utilidades')">+ site</button></span></h2>
-        <form class="fav-form" data-form="utilidades" onsubmit="addFavorite(event, 'utilidades')"><input name="title" placeholder="Nome do site"><input name="url" placeholder="https://..."><button type="submit">Adicionar</button></form>
-        <div class="links three" data-links="utilidades">
-          <a class="link" href="https://translate.google.com/?sl=auto&tl=es&op=translate" target="_blank">Tradutor PT → ES <small>viagens</small></a>
-          <a class="link" href="https://www.google.com/search?q=d%C3%B3lar+hoje" target="_blank">Dólar hoje <small>cotação</small></a>
-          <a class="link" href="https://www.google.com/search?q=bitcoin+hoje" target="_blank">Bitcoin hoje <small>cripto</small></a>
-          <a class="link" href="https://www.google.com/search?q=clima+Garanhuns" target="_blank">Clima Garanhuns <small>local</small></a>
-          <a class="link" href="https://rastreamento.correios.com.br/" target="_blank">Correios <small>rastreamento</small></a>
-          <a class="link" href="https://www.gov.br/anatel/pt-br" target="_blank">Anatel <small>telecom</small></a>
-          <a class="link" href="https://www.reclameaqui.com.br/" target="_blank">Reclame Aqui <small>consumo</small></a>
-          <a class="link" href="https://www.canva.com/" target="_blank">Canva <small>design</small></a>
-          <a class="link" href="https://www.youtube.com/" target="_blank">YouTube <small>pesquisa visual</small></a>
+      <section class="card span-5">
+        <h2>Utilidades rápidas <span class="tag">uso cotidiano</span></h2>
+        <div class="links">
+          <a class="link" href="https://mail.google.com/" target="_blank">Gmail</a>
+          <a class="link" href="https://calendar.google.com/" target="_blank">Agenda</a>
+          <a class="link" href="https://drive.google.com/" target="_blank">Drive</a>
+          <a class="link" href="https://chatgpt.com/" target="_blank">ChatGPT</a>
+          <a class="link" href="https://www.google.com/maps" target="_blank">Google Maps</a>
+          <a class="link" href="https://www.google.com/search?q=clima+Garanhuns" target="_blank">Clima Garanhuns</a>
         </div>
       </section>
     </main>
 
-    <footer>Guido Command Center · página local personalizável · versão inicial</footer>
+    <footer>Guido OS · Command Center integrado · Radar Core v0.1</footer>
   </div>
 
   <script>
+    const radarEventsKey = 'guido-radar-events-v1';
+    const notesKey = 'guido-command-notes';
+
+    const moduleLabels = {
+      'todos': 'Todos os módulos',
+      'radar-da-vida': 'Radar da Vida',
+      'guido-dividend-system': 'Guido Dividend System',
+      'gestor-imoveis': 'Gestor de Imóveis',
+      'tg-charge': 'T&G Charge',
+      'juridico': 'Jurídico',
+      'piuta': 'Piutá',
+      'manual': 'Manual'
+    };
+
     function tick() {
       const now = new Date();
       document.getElementById('clock').textContent = now.toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'});
       document.getElementById('date').textContent = now.toLocaleDateString('pt-BR', {weekday:'long', day:'2-digit', month:'long', year:'numeric'});
     }
     tick(); setInterval(tick, 1000);
+
+    function loadJson(key, fallback) {
+      try { return JSON.parse(localStorage.getItem(key)) || fallback; } catch { return fallback; }
+    }
+    function saveJson(key, value) { localStorage.setItem(key, JSON.stringify(value)); }
+
+    function getRadarEvents() { return loadJson(radarEventsKey, []); }
+    function setRadarEvents(events) { saveJson(radarEventsKey, events); renderRadarEvents(); }
+
+    function saveRadarEvent() {
+      const description = document.getElementById('eventDescription').value.trim();
+      if (!description) return alert('Descreva o evento antes de salvar.');
+      const now = new Date();
+      const amountRaw = document.getElementById('eventAmount').value;
+      const system = document.getElementById('eventSystem').value;
+      const category = document.getElementById('eventCategory').value.trim() || moduleLabels[system] || 'Geral';
+      const event = {
+        id: 'evt_' + now.toISOString().replace(/[-:.TZ]/g, '').slice(0, 14) + '_' + Math.random().toString(36).slice(2, 6),
+        createdAt: now.toISOString(),
+        date: now.toISOString().slice(0, 10),
+        source: 'manual',
+        system,
+        project: category,
+        category,
+        type: inferEventType(description),
+        description,
+        amount: amountRaw === '' ? null : Number(amountRaw),
+        currency: 'BRL',
+        status: document.getElementById('eventStatus').value,
+        entity: { kind: system, name: category },
+        tags: buildTags(system, category, description)
+      };
+      const events = [event, ...getRadarEvents()].slice(0, 200);
+      setRadarEvents(events);
+      document.getElementById('eventDescription').value = '';
+      document.getElementById('eventAmount').value = '';
+    }
+
+    function inferEventType(text) {
+      const t = text.toLowerCase();
+      if (t.includes('aluguel')) return 'Aluguel';
+      if (t.includes('dividendo') || t.includes('provento')) return 'Provento';
+      if (t.includes('prazo') || t.includes('processo')) return 'Jurídico';
+      if (t.includes('carregador') || t.includes('ocpp')) return 'T&G Charge';
+      if (t.includes('pagar') || t.includes('pago')) return 'Pagamento';
+      if (t.includes('recebi') || t.includes('recebido')) return 'Recebimento';
+      return 'Registro';
+    }
+
+    function buildTags(system, category, description) {
+      return [system, category, ...description.toLowerCase().split(/\s+/).filter(w => w.length > 4).slice(0, 5)];
+    }
+
+    function renderRadarEvents() {
+      const events = getRadarEvents();
+      const list = document.getElementById('eventsList');
+      const today = new Date().toISOString().slice(0, 10);
+      const todayEvents = events.filter(ev => ev.date === today);
+      const money = events.reduce((sum, ev) => sum + (Number(ev.amount) || 0), 0);
+      const propertyPendings = events.filter(ev => ev.system === 'gestor-imoveis' && ['pendente','alerta'].includes(ev.status)).length;
+      const alerts = events.filter(ev => ['pendente','alerta'].includes(ev.status)).length;
+
+      document.getElementById('metricToday').textContent = todayEvents.length;
+      document.getElementById('metricMoney').textContent = money.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+      document.getElementById('metricProperties').textContent = propertyPendings;
+      document.getElementById('metricAlerts').textContent = alerts;
+
+      if (!events.length) {
+        list.innerHTML = '<div class="event-row"><strong>Nenhum evento local ainda.</strong><small>Use a captura do Radar para registrar o primeiro evento estruturado.</small></div>';
+        return;
+      }
+      list.innerHTML = events.slice(0, 12).map(ev => `
+        <div class="event-row">
+          <strong>${escapeHtml(ev.type)} · ${escapeHtml(moduleLabels[ev.system] || ev.system)}</strong>
+          <small>${escapeHtml(ev.date)} · ${escapeHtml(ev.status)}${ev.amount ? ' · ' + Number(ev.amount).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) : ''}</small>
+          <small>${escapeHtml(ev.description)}</small>
+        </div>
+      `).join('');
+    }
+
+    function exportRadarEvents() {
+      const blob = new Blob([JSON.stringify(getRadarEvents(), null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'guido-radar-events.json';
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function clearRadarEvents() {
+      if (!confirm('Apagar todos os eventos locais do Radar neste navegador?')) return;
+      setRadarEvents([]);
+    }
 
     function getConsoleText() {
       const question = document.getElementById('dailyQuestion')?.value.trim() || '';
@@ -617,39 +532,47 @@
       const now = new Date();
       const question = document.getElementById('dailyQuestion')?.value.trim() || 'Gere minha Home Page Diária executiva com base no contexto disponível.';
       const quick = document.getElementById('quickSearch')?.value.trim();
+      const mode = document.getElementById('commandMode')?.value || 'todos';
       const climate = document.getElementById('weatherSummary')?.textContent || 'Clima local ainda não carregado.';
       const dateTime = now.toLocaleString('pt-BR', { dateStyle: 'full', timeStyle: 'short' });
+      const events = getRadarEvents().slice(0, 10);
+      const notes = localStorage.getItem(notesKey) || '';
       return `Contexto e Papel:
-Atue como meu assistente executivo e curador de rotina. Seu objetivo é analisar instantaneamente meu contexto atual, agenda, clima e histórico recente de conversas para gerar a minha Home Page Diária. O tom deve ser prático, analítico, reflexivo e estritamente filosófico, sem abordagem mística ou esotérica.
+Atue como meu assistente executivo e arquiteto operacional do Guido OS. O Guido OS integra Command Center, Radar da Vida, Guido Dividend System, Gestor de Imóveis, T&G Charge, jurídico, Piutá e rotina.
+
+Arquitetura atual:
+- Radar da Vida = núcleo de memória e eventos estruturados.
+- Command Center = tela executiva.
+- Guido Dividend System = módulo financeiro de B3 e proventos.
+- Gestor de Imóveis = módulo patrimonial de contratos, aluguéis, despesas e manutenção.
+- T&G Charge = módulo de carregadores, parceiros, receita e repasse de 15%.
 
 Dados de Entrada:
 Data e Hora: ${dateTime}
 Clima e Local: ${climate}
-Agenda do Dia: usar o que eu informar na pergunta; se não houver agenda, sinalizar lacunas objetivamente.
-Contexto Recente: novo galpão T&G Solar, advocacia crítica, processos Ielma/Hapvida/Unimed, Sítio Piutá, Guido Dividend System, B3/proventos sem avaliar pesos de portfólio, IA, automações, energia solar, EVs, viagens e rotina de trabalho.
-Pergunta/Comando do momento: ${question}${quick ? `
+Modo selecionado: ${moduleLabels[mode] || mode}
+Pergunta/Comando: ${question}${quick ? `
 Busca rápida adicional: ${quick}` : ''}
 
-Diretrizes de Análise:
-1. Cruze clima, hora e densidade provável de agenda para sugerir ritmo de produtividade.
-2. Identifique atenção técnica imediata em projetos, ferramentas, fluxos e arquitetura.
-3. Sob nenhuma hipótese calcular, julgar ou avaliar pesos de portfólio financeiro.
-4. Inclua lembretes práticos sobre hábitos diários, smartphones, automação veicular e áudio quando forem pertinentes.
+Eventos recentes do Radar local:
+${events.length ? JSON.stringify(events, null, 2) : 'Nenhum evento local registrado ainda.'}
 
-Formato de Saída Obrigatório:
-1. Leitura do Momento
-Um parágrafo direto cruzando clima, carga de trabalho técnica e uma reflexão filosófica rápida baseada em hermetismo lógico ou dualidade.
+Notas locais:
+${notes || 'Sem notas locais.'}
 
-2. Alertas e Gargalos (Warnings)
-Liste riscos de choque de agenda, mudanças bruscas de tempo ou dependências técnicas pendentes.
+Diretrizes:
+1. Responda com foco operacional.
+2. Se o modo for Dividend System, não calcule nem julgue pesos de portfólio; use apenas dados brutos, proventos, alertas e próximos passos.
+3. Se o modo for Gestor de Imóveis, priorize contratos, aluguéis, vencimentos, despesas, manutenção e pendências.
+4. Se o modo for Radar da Vida, transforme informações em eventos estruturados e próximos registros.
+5. Se o modo for T&G Charge, pense em carregadores, pontos parceiros, OCPP, Pix/cartão, CAPEX, receita e repasse de 15%.
 
-3. O Conselho Diretor
-Direcionamento prático, lógico e sem rodeios para o desafio principal do dia.
-
-4. Sugestões Táticas (Action Items)
-Engenharia/Finanças: sugestão acionável sobre arquitetura de software, infraestrutura ou fluxos de dados.
-Rotina e Hábito: lembrete de integração de rotina.
-Visão e Criação: ideia de exploração visual, pauta ou leitura conectada a estudos filosóficos.`;
+Formato:
+1. Leitura executiva
+2. Alertas
+3. Decisão recomendada
+4. Próximas ações
+5. Eventos que deveriam ser registrados no Radar`;
     }
 
     function askChatGPT() {
@@ -678,595 +601,10 @@ Visão e Criação: ideia de exploração visual, pauta ou leitura conectada a e
       openSearch('google');
     }
 
-    const layoutKey = 'guido-command-layout-v1';
-    let editMode = false;
-    let draggedBox = null;
-    let pointerDrag = null;
-
-    function restoreCustomLayout() {
-      const saved = loadJson(layoutKey, null);
-      if (!saved || !saved.header || !saved.main) return;
-      document.querySelector('header').innerHTML = saved.header;
-      document.querySelector('main.grid').innerHTML = saved.main;
-      if (saved.footer) document.querySelector('footer').innerHTML = saved.footer;
-    }
-
-    function createEditorToolbar() {
-      const toolbar = document.createElement('div');
-      toolbar.className = 'editor-toolbar';
-      toolbar.innerHTML = `
-        <button type="button" class="primary" onclick="toggleEditMode()">Personalizar</button>
-        <button type="button" onclick="addTextBox()">+ box texto</button>
-        <button type="button" onclick="addLinksBox()">+ box links</button>
-        <button type="button" onclick="saveLayout()">Salvar layout</button>
-        <button type="button" class="ghost-button" onclick="resetLayout()">Restaurar</button>
-      `;
-      document.body.appendChild(toolbar);
-    }
-
-    function toggleEditMode(force) {
-      editMode = typeof force === 'boolean' ? force : !editMode;
-      document.body.classList.toggle('edit-mode', editMode);
-      document.querySelectorAll('.editor-toolbar .primary').forEach(btn => {
-        btn.textContent = editMode ? 'Sair da edicao' : 'Personalizar';
-      });
-
-      if (editMode) {
-        enableInlineEditing();
-        addBoxControls();
-        enableBoxDragging();
-      } else {
-        disableInlineEditing();
-        disableBoxDragging();
-        removeBoxControls();
-      }
-    }
-
-    function enableInlineEditing() {
-      prepareEditableFragments();
-      const selector = [
-        '.eyebrow', 'h1', '.subtitle', '.quote', 'footer',
-        '.card h2', '.card h2 .tag', '.card p', '.card strong', '.tiny',
-        '.pill', '.mission-item', '.mission-item strong', '.mission-item p',
-        '.link .label', '.link small', '.editable-fragment'
-      ].join(',');
-
-      document.querySelectorAll(selector).forEach(el => {
-        if (el.closest('.editor-toolbar') || el.closest('.box-editor')) return;
-        el.contentEditable = 'true';
-        el.dataset.editable = '1';
-        el.spellcheck = true;
-      });
-
-      document.querySelectorAll('a.link').forEach(link => {
-        link.addEventListener('click', blockLinkWhileEditing);
-        link.addEventListener('dblclick', editLinkUrl);
-        link.title = 'Em edicao: duplo clique para alterar URL';
-      });
-    }
-
-    function prepareEditableFragments() {
-      const containers = [
-        ...document.querySelectorAll('.card h2, .hero, .status, .mission-item, footer')
-      ];
-
-      containers.forEach(container => {
-        [...container.childNodes].forEach(node => {
-          if (node.nodeType !== Node.TEXT_NODE) return;
-          if (!node.textContent || !node.textContent.trim()) return;
-
-          const span = document.createElement('span');
-          span.className = 'editable-fragment';
-          span.textContent = node.textContent.trim();
-          node.replaceWith(span);
-        });
-      });
-    }
-
-    function disableInlineEditing() {
-      document.querySelectorAll('[data-editable="1"]').forEach(el => {
-        el.removeAttribute('contenteditable');
-        el.removeAttribute('data-editable');
-      });
-
-      document.querySelectorAll('a.link').forEach(link => {
-        link.removeEventListener('click', blockLinkWhileEditing);
-        link.removeEventListener('dblclick', editLinkUrl);
-        link.removeAttribute('title');
-      });
-    }
-
-    function blockLinkWhileEditing(event) {
-      if (!editMode) return;
-      event.preventDefault();
-      event.stopPropagation();
-    }
-
-    function editLinkUrl(event) {
-      if (!editMode) return;
-      event.preventDefault();
-      event.stopPropagation();
-      const next = normalizeUrl(prompt('Nova URL deste link:', event.currentTarget.href) || '');
-      if (next) event.currentTarget.href = next;
-    }
-
-    function addBoxControls() {
-      document.querySelectorAll('.hero, .status, .card').forEach(box => {
-        if (box.querySelector(':scope > .box-editor')) return;
-        const controls = document.createElement('div');
-        controls.className = 'box-editor';
-        controls.innerHTML = `
-          <button type="button" data-action="drag" title="Arraste para mover ou inserir em outro box">arrastar</button>
-          <button type="button" data-action="wider">largura</button>
-          <button type="button" data-action="copy">duplicar</button>
-          <button type="button" data-action="delete">excluir</button>
-        `;
-        controls.addEventListener('click', event => {
-          const action = event.target.dataset.action;
-          if (!action) return;
-          event.preventDefault();
-          event.stopPropagation();
-          if (action === 'wider') cycleBoxWidth(box);
-          if (action === 'copy') duplicateBox(box);
-          if (action === 'delete') deleteBox(box);
-        });
-        box.prepend(controls);
-      });
-    }
-
-    function removeBoxControls() {
-      document.querySelectorAll('.box-editor').forEach(el => el.remove());
-    }
-
-    function cycleBoxWidth(box) {
-      if (!box.classList.contains('card')) return;
-      const spans = ['span-3', 'span-4', 'span-5', 'span-6', 'span-7', 'span-12'];
-      const current = spans.find(cls => box.classList.contains(cls)) || 'span-4';
-      const next = spans[(spans.indexOf(current) + 1) % spans.length];
-      spans.forEach(cls => box.classList.remove(cls));
-      box.classList.add(next);
-    }
-
-    function duplicateBox(box) {
-      const clone = box.cloneNode(true);
-      clone.querySelectorAll('.box-editor').forEach(el => el.remove());
-      clone.classList.remove('dragging-box', 'drop-target');
-      clone.removeAttribute('draggable');
-      box.after(clone);
-      if (editMode) {
-        enableInlineEditing();
-        addBoxControls();
-        enableBoxDragging();
-      }
-    }
-
-    function deleteBox(box) {
-      if (!confirm('Excluir este box?')) return;
-      box.remove();
-      ensureGridHasContent();
-    }
-
-    function addTextBox() {
-      const title = prompt('Titulo do novo box:', 'Novo box') || 'Novo box';
-      const section = document.createElement('section');
-      section.className = 'card span-4';
-      section.innerHTML = `
-        <h2>${escapeHtml(title)} <span class="tag">editavel</span></h2>
-        <div class="mission-item">
-          <strong>Titulo interno</strong>
-          <p>Edite este texto diretamente no modo Personalizar.</p>
-        </div>
-      `;
-      document.querySelector('main.grid').appendChild(section);
-      toggleEditMode(true);
-    }
-
-    function addLinksBox() {
-      const id = 'custom-' + Date.now().toString(36);
-      const title = prompt('Titulo do box de links:', 'Meus links') || 'Meus links';
-      const section = document.createElement('section');
-      section.className = 'card span-4';
-      section.dataset.section = id;
-      section.innerHTML = `
-        <h2>${escapeHtml(title)} <span class="block-actions"><span class="tag">links</span><button class="add-fav" type="button" onclick="toggleFavForm('${id}')">+ site</button></span></h2>
-        <form class="fav-form" data-form="${id}" onsubmit="addFavorite(event, '${id}')"><input name="title" placeholder="Nome do site"><input name="url" placeholder="https://..."><button type="submit">Adicionar</button></form>
-        <div class="links" data-links="${id}">
-          <a class="link" href="https://example.com" target="_blank"><span class="label">Exemplo</span><small>edite</small></a>
-        </div>
-      `;
-      document.querySelector('main.grid').appendChild(section);
-      if (!sectionNames.includes(id)) sectionNames.push(id);
-      toggleEditMode(true);
-    }
-
-    function enableBoxDragging() {
-      document.querySelectorAll('.card, .hero, .status').forEach(box => {
-        const handle = box.querySelector(':scope > .box-editor [data-action="drag"]');
-        if (!handle || handle.dataset.dragReady === '1') return;
-        handle.dataset.dragReady = '1';
-        handle.addEventListener('pointerdown', event => startPointerDrag(event, box));
-        handle.addEventListener('mousedown', event => startMouseDrag(event, box));
-        handle.addEventListener('touchstart', event => startTouchDrag(event, box), { passive: false });
-      });
-    }
-
-    function disableBoxDragging() {
-      document.querySelectorAll('.dragging-box, .drop-target').forEach(box => {
-        box.classList.remove('dragging-box', 'drop-target');
-      });
-      document.querySelectorAll('.drag-ghost, .drop-hint').forEach(el => el.remove());
-      document.body.classList.remove('drag-active');
-      window.removeEventListener('pointermove', movePointerDrag);
-      window.removeEventListener('pointerup', endPointerDrag);
-      window.removeEventListener('mousemove', moveMouseDrag);
-      window.removeEventListener('mouseup', endMouseDrag);
-      window.removeEventListener('touchmove', moveTouchDrag);
-      window.removeEventListener('touchend', endTouchDrag);
-      pointerDrag = null;
-      draggedBox = null;
-    }
-
-    function startPointerDrag(event, box) {
-      if (!editMode) return;
-      if (event.button !== undefined && event.button !== 0) return;
-      startDirectDrag(event, box, event.clientX, event.clientY);
-      window.addEventListener('pointermove', movePointerDrag);
-      window.addEventListener('pointerup', endPointerDrag, { once: true });
-    }
-
-    function startMouseDrag(event, box) {
-      if (pointerDrag || !editMode || event.button !== 0) return;
-      startDirectDrag(event, box, event.clientX, event.clientY);
-      window.addEventListener('mousemove', moveMouseDrag);
-      window.addEventListener('mouseup', endMouseDrag, { once: true });
-    }
-
-    function startTouchDrag(event, box) {
-      if (pointerDrag || !editMode || !event.touches.length) return;
-      const touch = event.touches[0];
-      startDirectDrag(event, box, touch.clientX, touch.clientY);
-      window.addEventListener('touchmove', moveTouchDrag, { passive: false });
-      window.addEventListener('touchend', endTouchDrag, { once: true });
-    }
-
-    function startDirectDrag(event, box, clientX, clientY) {
-      event.preventDefault();
-      event.stopPropagation();
-      draggedBox = box;
-      const rect = box.getBoundingClientRect();
-      const ghost = box.cloneNode(true);
-      ghost.querySelectorAll('.box-editor').forEach(el => el.remove());
-      ghost.classList.add('drag-ghost');
-      ghost.style.left = rect.left + 'px';
-      ghost.style.top = rect.top + 'px';
-      ghost.style.width = rect.width + 'px';
-      document.body.appendChild(ghost);
-
-      const hint = document.createElement('div');
-      hint.className = 'drop-hint';
-      hint.textContent = 'solte para inserir';
-      document.body.appendChild(hint);
-
-      pointerDrag = {
-        box,
-        ghost,
-        hint,
-        offsetX: clientX - rect.left,
-        offsetY: clientY - rect.top,
-        target: null
-      };
-
-      box.classList.add('dragging-box');
-      document.body.classList.add('drag-active');
-      updateDirectDrag(clientX, clientY);
-    }
-
-    function movePointerDrag(event) {
-      if (!pointerDrag) return;
-      event.preventDefault();
-      updateDirectDrag(event.clientX, event.clientY);
-    }
-
-    function moveMouseDrag(event) {
-      if (!pointerDrag) return;
-      event.preventDefault();
-      updateDirectDrag(event.clientX, event.clientY);
-    }
-
-    function moveTouchDrag(event) {
-      if (!pointerDrag || !event.touches.length) return;
-      event.preventDefault();
-      const touch = event.touches[0];
-      updateDirectDrag(touch.clientX, touch.clientY);
-    }
-
-    function updateDirectDrag(clientX, clientY) {
-      const x = clientX - pointerDrag.offsetX;
-      const y = clientY - pointerDrag.offsetY;
-      pointerDrag.ghost.style.left = `${x}px`;
-      pointerDrag.ghost.style.top = `${y}px`;
-      pointerDrag.ghost.style.transform = 'scale(.98)';
-      pointerDrag.hint.style.display = 'block';
-      pointerDrag.hint.style.left = `${clientX + 14}px`;
-      pointerDrag.hint.style.top = `${clientY + 14}px`;
-
-      const target = findDropTarget(clientX, clientY);
-      document.querySelectorAll('.drop-target').forEach(box => {
-        if (box !== target) box.classList.remove('drop-target');
-      });
-
-      pointerDrag.target = target;
-      if (target) {
-        target.classList.add('drop-target');
-        pointerDrag.hint.textContent = 'solte dentro deste box';
-      } else {
-        pointerDrag.hint.textContent = 'solte no painel principal';
-      }
-    }
-
-    function endPointerDrag(event) {
-      if (!pointerDrag) return;
-      event.preventDefault();
-      finishDirectDrag();
-    }
-
-    function endMouseDrag(event) {
-      if (!pointerDrag) return;
-      event.preventDefault();
-      finishDirectDrag();
-    }
-
-    function endTouchDrag(event) {
-      if (!pointerDrag) return;
-      event.preventDefault();
-      finishDirectDrag();
-    }
-
-    function finishDirectDrag() {
-      const snapshots = snapshotMovableBoxes();
-      const target = pointerDrag.target;
-
-      if (target) {
-        getNestedBoxContainer(target).appendChild(pointerDrag.box);
-      } else {
-        document.querySelector('main.grid').appendChild(pointerDrag.box);
-      }
-
-      animateLayoutFrom(snapshots);
-      pointerDrag.ghost.remove();
-      pointerDrag.hint.remove();
-      document.body.classList.remove('drag-active');
-      refreshEditorAfterMove();
-    }
-
-    function getNestedBoxContainer(box) {
-      let container = box.querySelector(':scope > .nested-boxes');
-      if (!container) {
-        container = document.createElement('div');
-        container.className = 'nested-boxes';
-        box.appendChild(container);
-      }
-      return container;
-    }
-
-    function refreshEditorAfterMove() {
-      document.querySelectorAll('.dragging-box, .drop-target').forEach(box => {
-        box.classList.remove('dragging-box', 'drop-target');
-      });
-      window.removeEventListener('pointermove', movePointerDrag);
-      window.removeEventListener('mousemove', moveMouseDrag);
-      window.removeEventListener('touchmove', moveTouchDrag);
-      pointerDrag = null;
-      draggedBox = null;
-      addBoxControls();
-      enableBoxDragging();
-    }
-
-    function findDropTarget(x, y) {
-      if (!pointerDrag) return null;
-      pointerDrag.ghost.style.display = 'none';
-      pointerDrag.hint.style.display = 'none';
-      const elements = document.elementsFromPoint(x, y);
-      pointerDrag.ghost.style.display = '';
-      pointerDrag.hint.style.display = 'block';
-
-      return elements.find(el => {
-        if (!el.classList || !el.classList.contains('card')) return false;
-        if (el === pointerDrag.box || pointerDrag.box.contains(el)) return false;
-        if (el.closest('.editor-toolbar') || el.closest('.box-editor')) return false;
-        return true;
-      }) || null;
-    }
-
-    function snapshotMovableBoxes() {
-      const map = new Map();
-      document.querySelectorAll('.card, .hero, .status').forEach(el => {
-        map.set(el, el.getBoundingClientRect());
-      });
-      return map;
-    }
-
-    function animateLayoutFrom(snapshots) {
-      requestAnimationFrame(() => {
-        snapshots.forEach((before, el) => {
-          if (!document.body.contains(el)) return;
-          const after = el.getBoundingClientRect();
-          const dx = before.left - after.left;
-          const dy = before.top - after.top;
-          if (Math.abs(dx) < 1 && Math.abs(dy) < 1) return;
-
-          el.animate([
-            { transform: `translate(${dx}px, ${dy}px)` },
-            { transform: 'translate(0, 0)' }
-          ], {
-            duration: 260,
-            easing: 'cubic-bezier(.2,.8,.2,1)'
-          });
-        });
-      });
-    }
-
-    function ensureGridHasContent() {
-      const grid = document.querySelector('main.grid');
-      if (grid.children.length) return;
-      const empty = document.createElement('section');
-      empty.className = 'card span-12 edit-empty';
-      empty.textContent = 'Use + box texto ou + box links para recomecar.';
-      grid.appendChild(empty);
-    }
-
-    function saveLayout() {
-      const wasEditing = editMode;
-      toggleEditMode(false);
-      const cleanHeader = cleanHtml(document.querySelector('header'));
-      const cleanMain = cleanHtml(document.querySelector('main.grid'));
-      const cleanFooter = cleanHtml(document.querySelector('footer'));
-      saveJson(layoutKey, {
-        header: cleanHeader,
-        main: cleanMain,
-        footer: cleanFooter,
-        savedAt: new Date().toISOString()
-      });
-      if (wasEditing) toggleEditMode(true);
-      alert('Layout salvo neste navegador.');
-    }
-
-    function cleanHtml(element) {
-      const clone = element.cloneNode(true);
-      clone.querySelectorAll('.box-editor').forEach(el => el.remove());
-      clone.querySelectorAll('.dragging-box, .drop-target').forEach(el => {
-        el.classList.remove('dragging-box', 'drop-target');
-      });
-      clone.querySelectorAll('[draggable], [data-drag-ready], [data-drop-ready]').forEach(el => {
-        el.removeAttribute('draggable');
-        el.removeAttribute('data-drag-ready');
-        el.removeAttribute('data-drop-ready');
-      });
-      clone.querySelectorAll('[contenteditable], [data-editable]').forEach(el => {
-        el.removeAttribute('contenteditable');
-        el.removeAttribute('data-editable');
-      });
-      return clone.innerHTML;
-    }
-
-    function resetLayout() {
-      if (!confirm('Restaurar o layout original? Links e notas salvos separadamente serao mantidos.')) return;
-      localStorage.removeItem(layoutKey);
-      location.reload();
-    }
-
     function escapeHtml(value) {
       return String(value).replace(/[&<>"']/g, char => ({
-        '&': '&amp;',
-        '<': '&lt;',
-        '>': '&gt;',
-        '"': '&quot;',
-        "'": '&#39;'
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
       }[char]));
-    }
-
-
-
-    const sectionNames = ['juridico','empresas','investimentos','ia','produtividade','energia','mobilidade','utilidades'];
-    const storageKey = 'guido-command-favorites-v2';
-    const deletedKey = 'guido-command-deleted-defaults-v1';
-
-    function loadJson(key, fallback) {
-      try { return JSON.parse(localStorage.getItem(key)) || fallback; } catch { return fallback; }
-    }
-    function saveJson(key, value) { localStorage.setItem(key, JSON.stringify(value)); }
-    function syncSectionNamesFromDom() {
-      document.querySelectorAll('[data-links]').forEach(el => {
-        const name = el.dataset.links;
-        if (name && !sectionNames.includes(name)) sectionNames.push(name);
-      });
-    }
-    function normalizeUrl(url) {
-      const trimmed = (url || '').trim();
-      if (!trimmed) return '';
-      return /^https?:\/\//i.test(trimmed) ? trimmed : 'https://' + trimmed;
-    }
-    function linkId(section, title, url) {
-      return section + '::' + title.trim().toLowerCase() + '::' + url.trim().toLowerCase();
-    }
-    function toggleFavForm(section) {
-      const form = document.querySelector(`[data-form="${section}"]`);
-      if (form) form.classList.toggle('open');
-    }
-    function makeLink(section, item, custom = true) {
-      const a = document.createElement('a');
-      a.className = 'link';
-      a.href = item.url;
-      a.target = '_blank';
-      a.dataset.custom = custom ? '1' : '0';
-      a.dataset.id = item.id || linkId(section, item.title, item.url);
-      const span = document.createElement('span');
-      span.className = 'label';
-      span.textContent = item.title;
-      const btn = document.createElement('button');
-      btn.className = 'delete-link';
-      btn.type = 'button';
-      btn.title = 'Excluir esta caixa';
-      btn.textContent = '×';
-      btn.onclick = (ev) => {
-        ev.preventDefault(); ev.stopPropagation();
-        deleteFavorite(section, a.dataset.id, custom);
-      };
-      a.appendChild(span); a.appendChild(btn);
-      return a;
-    }
-    function prepareDefaultLinks() {
-      const deleted = loadJson(deletedKey, {});
-      sectionNames.forEach(section => {
-        document.querySelectorAll(`[data-links="${section}"] > a.link`).forEach(a => {
-          const text = a.childNodes[0].textContent.trim();
-          const id = linkId(section, text, a.href);
-          if (deleted[id]) { a.remove(); return; }
-          const small = a.querySelector('small');
-          a.textContent = '';
-          const span = document.createElement('span'); span.className = 'label'; span.textContent = text;
-          a.appendChild(span);
-          if (small) a.appendChild(small);
-          const btn = document.createElement('button');
-          btn.className = 'delete-link'; btn.type = 'button'; btn.title = 'Excluir esta caixa'; btn.textContent = '×';
-          btn.onclick = (ev) => { ev.preventDefault(); ev.stopPropagation(); deleteFavorite(section, id, false); };
-          a.dataset.id = id; a.appendChild(btn);
-        });
-      });
-    }
-    function renderCustomFavorites() {
-      const data = loadJson(storageKey, {});
-      sectionNames.forEach(section => {
-        const wrap = document.querySelector(`[data-links="${section}"]`);
-        if (!wrap) return;
-        wrap.querySelectorAll('[data-custom="1"]').forEach(el => el.remove());
-        (data[section] || []).forEach(item => wrap.appendChild(makeLink(section, item, true)));
-      });
-    }
-    function addFavorite(event, section) {
-      event.preventDefault();
-      const form = event.currentTarget;
-      const title = form.title.value.trim();
-      const url = normalizeUrl(form.url.value);
-      if (!title || !url) return;
-      const data = loadJson(storageKey, {});
-      const item = { title, url, id: linkId(section, title, url) };
-      data[section] = [...(data[section] || []), item];
-      saveJson(storageKey, data);
-      form.reset(); form.classList.remove('open');
-      renderCustomFavorites();
-    }
-    function deleteFavorite(section, id, custom) {
-      if (custom) {
-        const data = loadJson(storageKey, {});
-        data[section] = (data[section] || []).filter(item => item.id !== id);
-        saveJson(storageKey, data);
-        renderCustomFavorites();
-      } else {
-        const deleted = loadJson(deletedKey, {});
-        deleted[id] = true; saveJson(deletedKey, deleted);
-        document.querySelector(`[data-id="${CSS.escape(id)}"]`)?.remove();
-      }
     }
 
     const weatherCodes = {
@@ -1299,16 +637,12 @@ Visão e Criação: ideia de exploração visual, pauta ou leitura conectada a e
       }
     }
 
-    restoreCustomLayout();
-    syncSectionNamesFromDom();
-    createEditorToolbar();
-    prepareDefaultLinks();
-    renderCustomFavorites();
     loadWeather();
+    renderRadarEvents();
 
     const notes = document.getElementById('notes');
-    notes.value = localStorage.getItem('guido-command-notes') || '';
-    notes.addEventListener('input', () => localStorage.setItem('guido-command-notes', notes.value));
+    notes.value = localStorage.getItem(notesKey) || '';
+    notes.addEventListener('input', () => localStorage.setItem(notesKey, notes.value));
   </script>
 </body>
 </html>
